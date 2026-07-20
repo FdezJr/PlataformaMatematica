@@ -255,7 +255,39 @@
             </div>
             <div id="tabMem"><h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 1: Ordenar</h3><div class="table-wrap mb-8"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Resultado</th><th>Errores</th></tr></thead><tbody id="tableMemory1"></tbody></table></div><h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 2: Distractor</h3><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Recuerdo</th><th>Cálculo</th></tr></thead><tbody id="tableMemory2"></tbody></table></div></div>
             <div id="tabAtt" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableAttention"></tbody></table></div></div>
-            <div id="tabInh" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableInhibition"></tbody></table></div></div>
+            <div id="tabInh" style="display: none;">
+    <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 4: Operaciones Selectivas</h3>
+    <div class="table-wrap mb-8">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre</th>
+                    <th>Curso</th>
+                    <th>Aciertos</th>
+                    <th>Falsas Alarmas</th>
+                    <th>Omisiones</th>
+                </tr>
+            </thead>
+            <tbody id="tableInhibition"></tbody>
+        </table>
+    </div>
+    
+    <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 4B: Ignora la Palabra (Interferencia)</h3>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre</th>
+                    <th>Curso</th>
+                    <th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody id="tableInhibitionB"></tbody>
+        </table>
+    </div>
+</div>
             <div id="tabFlex" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos R1</th><th>Aciertos R2</th><th>Total</th></tr></thead><tbody id="tableFlex"></tbody></table></div></div>
             <div id="tabChart" style="display: none;"><div class="glass-card"><h3 class="text-xl font-bold mb-4">Perfil de Funciones Ejecutivas (%)</h3><div class="mb-6"><select id="chartUserSelect" class="input-field" onchange="renderProfileChart()"><option value="">Selecciona un usuario...</option></select></div><div style="max-width: 500px; margin: 0 auto; position: relative;"><canvas id="profileChart"></canvas></div></div></div>
         </div>
@@ -730,19 +762,26 @@
     function logoutAdmin() { document.getElementById('adminDashboard').style.display = 'none'; document.getElementById('adminLogin').style.display = 'flex'; document.getElementById('adminPasswordInput').value = ''; }
     function switchTab(tabId, btn) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); ['tabMem', 'tabAtt', 'tabInh', 'tabFlex', 'tabChart'].forEach(id => document.getElementById(id).style.display = 'none'); document.getElementById(tabId).style.display = 'block'; }
 
-    async function loadAdminData() {
+  async function loadAdminData() {
         const snapshot = await db.collection("resultados").orderBy("fecha", "desc").get();
         allAdminData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const mem1 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Ordenar");
         const mem2 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Distractor");
         const att = allAdminData.filter(r => r.subcategoria === "Atención Sostenida");
         const inh = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio");
+        const inhB = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio - Interferencia"); // <-- NUEVO FILTRO
         const flex = allAdminData.filter(r => r.subcategoria === "Flexibilidad Cognitiva");
 
         document.getElementById('tableMemory1').innerHTML = mem1.map(r => { const b = r.esCorrecto ? '<span class="badge badge-success">Correcto</span>' : '<span class="badge badge-error">Incorrecto</span>'; const e = r.errores.length === 0 ? 'Ninguno' : r.errores.map(e => `Pos.${e.posicion}: ${e.elegido} (Era ${e.correcto})`).join('<br>'); return `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td>${b}</td><td class="text-xs">${e}</td></tr>`; }).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
         document.getElementById('tableMemory2').innerHTML = mem2.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.correctRecalls} / 5</span></td><td><span class="badge badge-warning">${r.metricas.correctMath} / 5</span></td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
         document.getElementById('tableAttention').innerHTML = att.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        
+        // TABLA RETO 4 ORIGINAL
         document.getElementById('tableInhibition').innerHTML = inh.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        
+        // NUEVA TABLA RETO 4B RENDERIZADA CON ÉXITO
+        document.getElementById('tableInhibitionB').innerHTML = inhB.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-purple">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        
         document.getElementById('tableFlex').innerHTML = flex.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertosR1} / 4</span></td><td><span class="badge badge-pink">${r.metricas.aciertosR2} / 4</span></td><td><span class="badge badge-purple">${r.metricas.totalAciertos} / 8</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
 
         const users = [...new Set(allAdminData.map(r => r.nombre))].filter(Boolean);
