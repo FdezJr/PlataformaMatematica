@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retos Matemáticos</title>
+    <title>MATHERAPY - Retos Matemáticos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -78,7 +78,6 @@
         .grid-cell.selected { background: var(--purple); color: #fff; border-color: var(--purple); transform: scale(0.95); }
         .grid-cell.wrong { background: var(--error); color: #fff; border-color: var(--error); animation: shake 0.3s; }
 
-        /* Flexibilidad */
         .pi-btn { flex: 1; padding: 1.5rem; border-radius: 1rem; font-size: 2rem; font-weight: 800; cursor: pointer; border: 2px solid; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
         .pi-btn-p { border-color: var(--pink); color: var(--pink); background: rgba(236, 72, 153, 0.1); }
         .pi-btn-p:hover { background: var(--pink); color: white; transform: scale(1.05); }
@@ -122,6 +121,70 @@
         </div>
     </div>
 
+    <!-- MODAL ACTIVIDAD 1: RASTREADOR DE SECUENCIAS -->
+    <div id="gamePracticeModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="glass-card text-center border border-[var(--purple)] shadow-[0_0_50px_var(--purple-glow)]" style="max-width: 450px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-[var(--purple)] flex items-center gap-2">
+                    <i class="fa-solid fa-bullseye"></i> Rastreador Simétrico
+                </h3>
+                <button class="text-[var(--text-muted)] hover:text-[var(--error)] text-lg" onclick="closePracticeGame()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-[var(--text-muted)] mb-4" id="gamePracticeInstructions">
+                Observa la secuencia simétrica que se iluminará y replícala exactamente en el mismo orden.
+            </p>
+
+            <div class="grid grid-cols-3 gap-3 my-6 max-w-[280px] mx-auto" id="practiceGridBoard"></div>
+
+            <div class="flex justify-between items-center text-sm font-mono mb-4 px-2">
+                <span style="color: var(--text-muted);">Nivel: <span id="practiceLevel" class="text-[var(--accent)] font-bold">1/3</span></span>
+                <span style="color: var(--text-muted);">Estado: <span id="practiceStatus" class="text-[var(--primary)] font-bold">Esperando...</span></span>
+            </div>
+
+            <button id="btnStartPracticeSequence" class="btn-purple w-full" onclick="startPracticeSequence()">
+                <i class="fa-solid fa-play"></i> Mostrar Secuencia
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL ACTIVIDAD 2: FILTRO NUMÉRICO VELOZ (INTRUSO) -->
+    <div id="gameIntrusoModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+        <div id="intrusoCard" class="glass-card text-center border border-[var(--primary)] shadow-[0_0_50px_var(--primary-glow)] transition-colors duration-200" style="max-width: 450px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-[var(--primary)] flex items-center gap-2">
+                    <i class="fa-solid fa-bolt"></i> Filtro Numérico Veloz
+                </h3>
+                <button class="text-[var(--text-muted)] hover:text-[var(--error)] text-lg" onclick="closeIntrusoGame()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-[var(--text-muted)] mb-4">
+                Presiona el botón solo si el número en pantalla es <strong>el doble</strong> o <strong>la mitad</strong> del número anterior.
+            </p>
+
+            <div class="my-8 py-8 rounded-2xl bg-[var(--bg-card-alt)] border border-[var(--border)] relative overflow-hidden">
+                <div id="intrusoNumberDisplay" class="text-6xl font-black font-mono text-[var(--text)] tracking-wider">
+                    --
+                </div>
+                <div id="intrusoTimer" class="absolute top-3 right-3 text-xs font-mono text-[var(--accent)] font-bold">
+                    03:00
+                </div>
+            </div>
+
+            <button id="btnIntrusoTrigger" class="btn-primary w-full py-4 text-lg font-bold mb-4 shadow-[0_0_20px_var(--primary-glow)]" onclick="handleIntrusoClick()" disabled>
+                ⚡ ¡INTRUSO!
+            </button>
+
+            <button id="btnStartIntruso" class="btn-accent w-full" onclick="startIntrusoGame()">
+                <i class="fa-solid fa-play"></i> Iniciar Prueba (3 Min)
+            </button>
+        </div>
+    </div>
+
     <div id="userApp">
         <!-- REGISTRO CON DETECCIÓN DE RETORNO -->
         <section class="screen active" id="screenRegister">
@@ -129,7 +192,6 @@
                 <img src="https://z-cdn-media.chatglm.cn/files/0e49b2cf-e9f7-4ae3-b5a3-ce0a58d210a8.png?auth_key=1884216701-010d0348ba124471a9dadfeb31a14e13-0-6bae9c75ccb193834bc041cf203cfc55" alt="Logo Junior Fernández" style="width: 140px; margin: 0 auto 1.5rem;">
                 <h1 class="text-3xl font-bold mb-2">Retos Matemáticos</h1>
                 
-                <!-- Bloque de bienvenida para usuario existente -->
                 <div id="returningUserBlock" style="display: none;" class="mb-6 p-4 rounded-xl bg-[var(--primary-glow)] border border-[var(--primary-dim)]">
                     <p class="text-sm text-[var(--text)] font-medium mb-3">¡Hola de nuevo, <span id="returningUserName" class="text-[var(--primary)] font-bold"></span>! Detectamos tu perfil de <span id="returningUserCourse" class="font-bold text-[var(--accent)]"></span>.</p>
                     <button class="btn-accent w-full text-sm !padding-[0.6rem]" onclick="cargarPerfilExistenteLocal()"><i class="fa-solid fa-chart-pie"></i> Ver mi Perfil e Intervención</button>
@@ -241,7 +303,7 @@
             </div>
         </section>
 
-        <!-- PANEL DE INTERVENCIÓN EVOLUCIONADO -->
+        <!-- PANEL DE INTERVENCIÓN -->
         <section class="screen" id="screenFinal" style="max-width: 900px; margin: 0 auto; width: 100%;">
             <div class="glass-card w-full !max-w-none text-center mb-6">
                 <div class="text-5xl mb-3">🚀</div>
@@ -295,7 +357,7 @@
         </section>
     </div>
 
-    <!-- ADMINISTRADOR -->
+    <!-- PANEL ADMINISTRADOR -->
     <div id="adminApp">
         <div id="adminLogin" class="flex items-center justify-center" style="min-height: 100vh;"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style="background: rgba(99,102,241,0.15);"><i class="fa-solid fa-shield-halved text-xl" style="color: #818cf8;"></i></div><h3 class="text-xl font-bold mb-1">Panel de Administrador</h3><input type="password" id="adminPasswordInput" class="input-field mb-2 mt-4" placeholder="Contraseña"><div class="error-msg mb-4" id="errorPassword">Contraseña incorrecta</div><button onclick="verifyAdminPassword()" class="btn-primary w-full"><i class="fa-solid fa-right-to-bracket"></i> Ingresar</button></div></div>
         <div id="adminDashboard" style="display: none;">
@@ -313,7 +375,29 @@
                 <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 2: Distractor</h3>
                 <div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Recuerdo</th><th>Cálculo</th></tr></thead><tbody id="tableMemory2"></tbody></table></div>
             </div>
-            <div id="tabAtt" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableAttention"></tbody></table></div></div>
+            <div id="tabAtt" style="display: none;">
+                <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 3: Búsqueda Visual</h3>
+                <div class="table-wrap mb-8"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableAttention"></tbody></table></div>
+                
+                <h3 class="text-lg font-bold my-4" style="color: var(--primary);">Prueba Continua (Filtro Veloz 3 Min)</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Nombre</th>
+                                <th>Curso</th>
+                                <th>Aciertos</th>
+                                <th>Falsas Alarmas</th>
+                                <th>Omisiones</th>
+                                <th>TR Promedio</th>
+                                <th>Estabilidad (SD)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableIntrusoAtt"></tbody>
+                    </table>
+                </div>
+            </div>
             <div id="tabInh" style="display: none;">
                 <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 4: Operaciones Selectivas</h3>
                 <div class="table-wrap mb-8"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableInhibition"></tbody></table></div>
@@ -463,7 +547,7 @@
         let lowScore = 100; let weakFunction = ''; for (const [key, value] of Object.entries(scores)) { if (value < lowScore) { lowScore = value; weakFunction = key; } }
         const bibliotecaEstatica = {
             memoria_trabajo: [{ titulo: "Cadenas Operativas Inversas", desc: "Resuelve sumas encadenadas reteniendo resultados parciales en mente.", icon: "fa-link" }, { titulo: "Matrices Numéricas Ocultas", desc: "Ubica coordenadas matemáticas en una cuadrícula que desaparece.", icon: "fa-table" }],
-            atencion_sostenida: [{ titulo: "Rastreador de Secuencias Simétricas", desc: "Encuentra patrones geométricos continuos sin perder la concentración.", icon: "fa-bullseye" }, { titulo: "Filtro Numérico Veloz", desc: "Detecta múltiplos específicos en ráfagas de números de alta velocidad.", icon: "fa-bolt" }],
+            atencion_sostenida: [{ titulo: "Rastreador de Secuencias Simétricas", desc: "Encuentra patrones geométricos continuos sin perder la concentración.", icon: "fa-bullseye" }, { titulo: "Filtro Numérico Veloz", desc: "Detecta múltiplos y dobles en ráfagas de números de alta velocidad.", icon: "fa-bolt" }],
             control_inhibitorio: [{ titulo: "Cruces de Signos Conflictivos", desc: "Resuelve operaciones donde los signos cambian de color y significado.", icon: "fa-ban" }, { titulo: "Desafío Mayor a Veinte", desc: "Cálculo aritmético rápido ignorando distractores menores automatizados.", icon: "fa-hand" }],
             flexibilidad_cognitiva: [{ titulo: "Alternador Aritmético Súbito", desc: "Cambia entre sumas y restas inmediatamente según la señal visual cambiante.", icon: "fa-shuffle" }, { titulo: "Clasificador de Polígonos Dinámico", desc: "Ordena figuras geométricas bajo reglas de clasificación mutables.", icon: "fa-shapes" }]
         };
@@ -474,8 +558,30 @@
             flexibilidad_cognitiva: { diag: "Se evidencia rigidez procedimental al transicionar entre reglas o instrucciones operacionales alternadas.", strat: "Plantear problemas con múltiples vías de solución. Cambiar intencionalmente los contextos del problema para evitar la mecanización estricta." }
         };
         const guia = guiasDidacticas[weakFunction] || guiasDidacticas['control_inhibitorio']; document.getElementById('planDiagnostic').innerText = guia.diag; document.getElementById('planStrategy').innerText = guia.strat;
-        const actividadesGrid = document.getElementById('recommendedActivitiesGrid'); actividadesGrid.innerHTML = ''; const actividadesAsignadas = bibliotecaEstatica[weakFunction] || bibliotecaEstatica['control_inhibitorio'];
-        actividadesAsignadas.forEach(act => { actividadesGrid.innerHTML += `<div class="p-4 rounded-xl bg-[var(--bg-card-alt)] border border-[var(--border)] hover:border-[var(--purple)] transition-all"><div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-[var(--purple)]"><i class="fa-solid ${act.icon} text-lg"></i></div><h4 class="font-bold text-sm text-[var(--text)]">${act.titulo}</h4></div><p class="text-xs text-[var(--text-muted)] mb-3">${act.desc}</p><button class="text-xs font-semibold text-[var(--primary)] hover:underline flex items-center gap-1" onclick="showToast('Iniciando actividad interactiva...')">Iniciar práctica <i class="fa-solid fa-arrow-right text-[10px]"></i></button></div>`; });
+        const actividadesGrid = document.getElementById('recommendedActivitiesGrid'); actividadesGrid.innerHTML = ''; const actividadesAsignadas = bibliotecaEstatica[weakFunction] || bibliotecaEstatica['atencion_sostenida'];
+        
+        actividadesAsignadas.forEach(act => {
+            const esRastreador = act.titulo === "Rastreador de Secuencias Simétricas";
+            const esFiltro = act.titulo === "Filtro Numérico Veloz";
+            
+            let clickAction = `showToast('Esta actividad estará disponible en la próxima actualización.')`;
+            if (esRastreador) clickAction = `openPracticeGame()`;
+            if (esFiltro) clickAction = `openIntrusoGame()`;
+            
+            actividadesGrid.innerHTML += `
+                <div class="p-4 rounded-xl bg-[var(--bg-card-alt)] border border-[var(--border)] hover:border-[var(--purple)] transition-all">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-[var(--purple)]">
+                            <i class="fa-solid ${act.icon} text-lg"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-[var(--text)]">${act.titulo}</h4>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mb-3">${act.desc}</p>
+                    <button class="text-xs font-semibold text-[var(--primary)] hover:underline flex items-center gap-1" onclick="${clickAction}">
+                        Iniciar práctica <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>`;
+        });
     }
 
     function resetTamizajeParaReevaluacion() { if(confirm("¿Quieres iniciar un nuevo tamizaje de reevaluación?")) { state.mem2.currentTrial = 0; state.mem2.results = []; state.att.foundCount = 0; state.att.wrongClicks = 0; state.flex.current = 0; state.flex.scoreR1 = 0; state.flex.scoreR2 = 0; showScreen('screenInstrMemory1'); } }
@@ -488,11 +594,31 @@
 
     async function loadAdminData() {
         const snapshot = await db.collection("resultados").orderBy("fecha", "desc").get(); allAdminData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const mem1 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Ordenar"); const mem2 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Distractor"); const att = allAdminData.filter(r => r.subcategoria === "Atención Sostenida"); const inh = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio"); const inhB = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio - Interferencia"); const flex = allAdminData.filter(r => r.subcategoria === "Flexibilidad Cognitiva");
+        const mem1 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Ordenar"); 
+        const mem2 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Distractor"); 
+        const att = allAdminData.filter(r => r.subcategoria === "Atención Sostenida"); 
+        const intrusoData = allAdminData.filter(r => r.subcategoria === "Atención Sostenida - Filtro Intruso");
+        const inh = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio"); 
+        const inhB = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio - Interferencia"); 
+        const flex = allAdminData.filter(r => r.subcategoria === "Flexibilidad Cognitiva");
 
         document.getElementById('tableMemory1').innerHTML = mem1.map(r => { const b = r.esCorrecto ? '<span class="badge badge-success">Correcto</span>' : '<span class="badge badge-error">Incorrecto</span>'; const e = r.errores.length === 0 ? 'Ninguno' : r.errores.map(e => `Pos.${e.posicion}: ${e.elegido} (Era ${e.correcto})`).join('<br>'); return `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td>${b}</td><td class="text-xs">${e}</td></tr>`; }).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
         document.getElementById('tableMemory2').innerHTML = mem2.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.correctRecalls} / 5</span></td><td><span class="badge badge-warning">${r.metricas.correctMath} / 5</span></td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
         document.getElementById('tableAttention').innerHTML = att.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        
+        document.getElementById('tableIntrusoAtt').innerHTML = intrusoData.map(r => `
+            <tr>
+                <td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td>
+                <td><strong>${r.nombre}</strong></td>
+                <td>${r.curso}</td>
+                <td><span class="badge badge-success">${r.metricas.aciertos}</span></td>
+                <td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td>
+                <td><span class="badge badge-warning">${r.metricas.omisiones}</span></td>
+                <td class="font-mono text-xs">${r.metricas.promedioTR_ms} ms</td>
+                <td><span class="badge badge-purple">±${r.metricas.desviacionEstandarTR_ms} ms</span></td>
+            </tr>
+        `).join('') || `<tr><td colspan="8" class="text-center py-6" style="color: var(--text-muted);">Sin registros aún</td></tr>`;
+
         document.getElementById('tableInhibition').innerHTML = inh.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
         document.getElementById('tableInhibitionB').innerHTML = inhB.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-purple">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
         document.getElementById('tableFlex').innerHTML = flex.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertosR1} / 4</span></td><td><span class="badge badge-pink">${r.metricas.aciertosR2} / 4</span></td><td><span class="badge badge-purple">${r.metricas.totalAciertos} / 8</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
@@ -512,6 +638,261 @@
         const data = { labels: ['Memoria de Trabajo', 'Atención Sostenida', 'Control Inhibitorio', 'Flexibilidad Cognitiva'], datasets: [{ label: 'Nivel (%)', data: [memScore.toFixed(1), attScore.toFixed(1), inhScore.toFixed(1), flexScore.toFixed(1)], fill: true, backgroundColor: 'rgba(20, 184, 166, 0.2)', borderColor: 'rgb(20, 184, 166)', pointBackgroundColor: 'rgb(20, 184, 166)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgb(20, 184, 166)' }] };
         if (profileChartInstance) profileChartInstance.destroy(); const ctx = document.getElementById('profileChart').getContext('2d');
         profileChartInstance = new Chart(ctx, { type: 'radar', data: data, options: { elements: { line: { borderWidth: 2 } }, scales: { r: { angleLines: { color: 'rgba(123,139,170,0.2)' }, grid: { color: 'rgba(123,139,170,0.2)' }, pointLabels: { color: '#e8edf5', font: { family: 'Space Grotesk', size: 12 } }, ticks: { backdropColor: 'transparent', color: '#7b8baa', stepSize: 25 }, suggestedMin: 0, suggestedMax: 100 } } } });
+    }
+
+    // ==========================================
+    // ACTIVIDAD 1: RASTREADOR SIMÉTRICO
+    // ==========================================
+    let practiceState = { sequence: [], userSequence: [], level: 1, maxLevels: 3, canClick: false };
+
+    function openPracticeGame() {
+        practiceState.level = 1; practiceState.sequence = []; practiceState.userSequence = []; practiceState.canClick = false;
+        document.getElementById('practiceLevel').innerText = `1 / ${practiceState.maxLevels}`;
+        document.getElementById('practiceStatus').innerText = "¡Listo!"; document.getElementById('practiceStatus').style.color = "var(--primary)";
+        document.getElementById('btnStartPracticeSequence').style.display = "inline-flex";
+
+        const board = document.getElementById('practiceGridBoard'); board.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell text-xl font-bold select-none'; cell.dataset.index = i; cell.innerText = i + 1;
+            cell.onclick = () => handlePracticeCellClick(i, cell); board.appendChild(cell);
+        }
+        const modal = document.getElementById('gamePracticeModal'); modal.style.display = 'flex'; modal.classList.remove('hidden');
+    }
+
+    function closePracticeGame() { const modal = document.getElementById('gamePracticeModal'); modal.style.display = 'none'; modal.classList.add('hidden'); }
+
+    function startPracticeSequence() {
+        document.getElementById('btnStartPracticeSequence').style.display = "none";
+        document.getElementById('practiceStatus').innerText = "Observa..."; document.getElementById('practiceStatus').style.color = "var(--accent)";
+        practiceState.userSequence = []; practiceState.canClick = false; practiceState.sequence = [];
+        
+        const totalPasos = practiceState.level + 2;
+        for (let i = 0; i < totalPasos; i++) { practiceState.sequence.push(Math.floor(Math.random() * 9)); }
+
+        let index = 0;
+        const interval = setInterval(() => {
+            const cells = document.querySelectorAll('#practiceGridBoard .grid-cell');
+            const targetCell = cells[practiceState.sequence[index]];
+
+            targetCell.style.background = 'var(--purple)'; targetCell.style.color = '#fff';
+            targetCell.style.boxShadow = '0 0 15px var(--purple-glow)';
+
+            setTimeout(() => { targetCell.style.background = ''; targetCell.style.color = ''; targetCell.style.boxShadow = ''; }, 600);
+            index++;
+            if (index >= practiceState.sequence.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    practiceState.canClick = true; document.getElementById('practiceStatus').innerText = "¡Tu turno!";
+                    document.getElementById('practiceStatus').style.color = "var(--success)";
+                }, 700);
+            }
+        }, 1000);
+    }
+
+    function handlePracticeCellClick(clickedIndex, cellElement) {
+        if (!practiceState.canClick) return;
+        practiceState.userSequence.push(clickedIndex);
+        const currentCheckIdx = practiceState.userSequence.length - 1;
+
+        if (practiceState.userSequence[currentCheckIdx] !== practiceState.sequence[currentCheckIdx]) {
+            practiceState.canClick = false; cellElement.classList.add('wrong');
+            document.getElementById('practiceStatus').innerText = "Incorrecto"; document.getElementById('practiceStatus').style.color = "var(--error)";
+            setTimeout(() => {
+                cellElement.classList.remove('wrong'); showToast("El patrón no coincide. ¡Inténtalo de nuevo!");
+                document.getElementById('btnStartPracticeSequence').style.display = "inline-flex";
+                document.getElementById('btnStartPracticeSequence').innerHTML = `<i class="fa-solid fa-rotate-left"></i> Repetir Nivel`;
+            }, 600);
+            return;
+        }
+
+        cellElement.style.background = 'var(--primary-glow)'; setTimeout(() => { cellElement.style.background = ''; }, 200);
+
+        if (practiceState.userSequence.length === practiceState.sequence.length) {
+            practiceState.canClick = false;
+            if (practiceState.level < practiceState.maxLevels) {
+                document.getElementById('practiceStatus').innerText = "¡Nivel Superado!"; document.getElementById('practiceStatus').style.color = "var(--success)";
+                setTimeout(() => {
+                    practiceState.level++; document.getElementById('practiceLevel').innerText = `${practiceState.level} / ${practiceState.maxLevels}`;
+                    document.getElementById('btnStartPracticeSequence').style.display = "inline-flex";
+                    document.getElementById('btnStartPracticeSequence').innerHTML = `<i class="fa-solid fa-arrow-right"></i> Ir al Nivel ${practiceState.level}`;
+                }, 1000);
+            } else {
+                document.getElementById('practiceStatus').innerText = "💥 ¡COMPLETADO! 💥"; document.getElementById('practiceStatus').style.color = "var(--accent)";
+                setTimeout(() => { alert("¡Excelente trabajo! Has entrenado tu atención sostenida de forma exitosa hoy."); closePracticeGame(); }, 1200);
+            }
+        }
+    }
+
+    // ==========================================
+    // ACTIVIDAD 2: FILTRO NUMÉRICO (INTRUSO)
+    // ==========================================
+    let intrusoState = {
+        active: false,
+        timerInterval: null,
+        streamInterval: null,
+        durationSeconds: 180,
+        previousNumber: null,
+        currentNumber: null,
+        isTarget: false,
+        clickedInCurrent: false,
+        aciertos: 0,
+        falsasAlarmas: 0,
+        omisiones: 0,
+        reactionTimes: [],
+        numberStartTime: 0
+    };
+
+    function openIntrusoGame() {
+        document.getElementById('intrusoNumberDisplay').innerText = "--";
+        document.getElementById('intrusoTimer').innerText = "03:00";
+        document.getElementById('btnStartIntruso').style.display = "inline-flex";
+        document.getElementById('btnIntrusoTrigger').disabled = true;
+
+        const modal = document.getElementById('gameIntrusoModal');
+        modal.style.display = 'flex'; modal.classList.remove('hidden');
+    }
+
+    function closeIntrusoGame() {
+        stopIntrusoGame();
+        const modal = document.getElementById('gameIntrusoModal');
+        modal.style.display = 'none'; modal.classList.add('hidden');
+    }
+
+    function stopIntrusoGame() {
+        intrusoState.active = false;
+        clearInterval(intrusoState.timerInterval);
+        clearInterval(intrusoState.streamInterval);
+    }
+
+    function startIntrusoGame() {
+        document.getElementById('btnStartIntruso').style.display = "none";
+        document.getElementById('btnIntrusoTrigger').disabled = false;
+
+        intrusoState = {
+            active: true, timerInterval: null, streamInterval: null, durationSeconds: 180,
+            previousNumber: null, currentNumber: null, isTarget: false, clickedInCurrent: false,
+            aciertos: 0, falsasAlarmas: 0, omisiones: 0, reactionTimes: [], numberStartTime: 0
+        };
+
+        let timeLeft = intrusoState.durationSeconds;
+        intrusoState.timerInterval = setInterval(() => {
+            timeLeft--;
+            const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+            const sec = String(timeLeft % 60).padStart(2, '0');
+            document.getElementById('intrusoTimer').innerText = `${min}:${sec}`;
+
+            if (timeLeft <= 0) { finishIntrusoGame(); }
+        }, 1000);
+
+        nextIntrusoNumber();
+        intrusoState.streamInterval = setInterval(() => {
+            if (intrusoState.isTarget && !intrusoState.clickedInCurrent) {
+                intrusoState.omisiones++;
+            }
+            nextIntrusoNumber();
+        }, 2200);
+    }
+
+    function nextIntrusoNumber() {
+        intrusoState.clickedInCurrent = false;
+        let newNum;
+
+        if (intrusoState.currentNumber === null) {
+            newNum = Math.floor(Math.random() * 40) + 10;
+            intrusoState.isTarget = false;
+        } else {
+            intrusoState.previousNumber = intrusoState.currentNumber;
+            const forceTarget = Math.random() < 0.35;
+
+            if (forceTarget) {
+                const canHalf = intrusoState.previousNumber % 2 === 0;
+                if (canHalf && Math.random() < 0.5) {
+                    newNum = intrusoState.previousNumber / 2;
+                } else {
+                    newNum = intrusoState.previousNumber * 2;
+                }
+            } else {
+                do {
+                    newNum = Math.floor(Math.random() * 80) + 5;
+                } while (newNum === intrusoState.previousNumber * 2 || newNum === intrusoState.previousNumber / 2 || newNum === intrusoState.previousNumber);
+            }
+
+            intrusoState.isTarget = (newNum === intrusoState.previousNumber * 2) || (newNum === intrusoState.previousNumber / 2);
+        }
+
+        intrusoState.currentNumber = newNum;
+        intrusoState.numberStartTime = Date.now();
+        document.getElementById('intrusoNumberDisplay').innerText = newNum;
+    }
+
+    function handleIntrusoClick() {
+        if (!intrusoState.active || intrusoState.clickedInCurrent) return;
+        intrusoState.clickedInCurrent = true;
+
+        const reactionTime = Date.now() - intrusoState.numberStartTime;
+        const card = document.getElementById('intrusoCard');
+
+        if (intrusoState.isTarget) {
+            intrusoState.aciertos++;
+            intrusoState.reactionTimes.push(reactionTime);
+            triggerFlashEffect(card, 'rgba(34, 197, 94, 0.5)', 'var(--success)');
+        } else {
+            intrusoState.falsasAlarmas++;
+            triggerFlashEffect(card, 'rgba(239, 68, 68, 0.5)', 'var(--error)');
+        }
+    }
+
+    function triggerFlashEffect(element, glowColor, borderColor) {
+        const origBorder = element.style.borderColor;
+        const origShadow = element.style.boxShadow;
+
+        element.style.borderColor = borderColor;
+        element.style.boxShadow = `0 0 50px ${glowColor}`;
+
+        setTimeout(() => {
+            element.style.borderColor = origBorder;
+            element.style.boxShadow = origShadow;
+        }, 300);
+    }
+
+    async function finishIntrusoGame() {
+        stopIntrusoGame();
+        document.getElementById('btnIntrusoTrigger').disabled = true;
+
+        let avgRT = 0;
+        let sdRT = 0;
+        if (intrusoState.reactionTimes.length > 0) {
+            const sum = intrusoState.reactionTimes.reduce((a, b) => a + b, 0);
+            avgRT = Math.round(sum / intrusoState.reactionTimes.length);
+            const variance = intrusoState.reactionTimes.reduce((a, b) => a + Math.pow(b - avgRT, 2), 0) / intrusoState.reactionTimes.length;
+            sdRT = Math.round(Math.sqrt(variance));
+        }
+
+        const res = {
+            categoria: "Funciones Ejecutivas",
+            subcategoria: "Atención Sostenida - Filtro Intruso",
+            nombre: state.user.nombre,
+            edad: state.user.edad,
+            curso: state.user.curso,
+            metricas: {
+                aciertos: intrusoState.aciertos,
+                falsasAlarmas: intrusoState.falsasAlarmas,
+                omisiones: intrusoState.omisiones,
+                promedioTR_ms: avgRT,
+                desviacionEstandarTR_ms: sdRT
+            },
+            fecha: new Date().toISOString()
+        };
+
+        try {
+            await db.collection("resultados").add(res);
+            alert(`¡Prueba finalizada!\nAciertos: ${intrusoState.aciertos}\nOmisiones: ${intrusoState.omisiones}\nTiempo de reacción promedio: ${avgRT} ms (Estabilidad SD: ±${sdRT} ms)`);
+            closeIntrusoGame();
+        } catch (e) {
+            console.error(e);
+            showToast("Error al registrar los resultados.");
+        }
     }
 </script>
 </body>
