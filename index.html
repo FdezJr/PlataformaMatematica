@@ -3,754 +3,645 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MATHERAPY - Sistema de Intervención Matemática</title>
-    <!-- Tailwind CSS CDN -->
+    <title>MATHERAPY - Retos Matemáticos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        .hidden-section { display: none; }
-        .grid-number-btn {
-            transition: all 0.15s ease-in-out;
+        :root {
+            --bg: #0c1222; --bg-card: #131d33; --bg-card-alt: #182442;
+            --text: #e8edf5; --text-muted: #7b8baa;
+            --primary: #14b8a6; --primary-dim: #0d9488; --primary-glow: rgba(20, 184, 166, 0.25);
+            --accent: #f59e0b; --accent-glow: rgba(245, 158, 11, 0.25);
+            --purple: #8b5cf6; --purple-glow: rgba(139, 92, 246, 0.25);
+            --pink: #ec4899; --pink-glow: rgba(236, 72, 153, 0.25);
+            --success: #22c55e; --error: #ef4444; --border: rgba(123, 139, 170, 0.12);
         }
-        .grid-number-btn:active {
-            transform: scale(0.92);
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.35; animation: blobFloat 18s ease-in-out infinite alternate; }
+        .blob-1 { width: 420px; height: 420px; background: #14b8a6; top: -10%; left: -5%; }
+        .blob-2 { width: 350px; height: 350px; background: #f59e0b; bottom: -8%; right: -5%; animation-delay: -6s; }
+        .blob-3 { width: 280px; height: 280px; background: #8b5cf6; top: 50%; left: 60%; animation-delay: -12s; }
+        @keyframes blobFloat { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(30px, 10px) scale(1.04); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes numberReveal { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-5px); } }
+
+        .screen { display: none; position: relative; z-index: 10; min-height: 100vh; padding: 1.5rem; flex-direction: column; align-items: center; justify-content: center; }
+        .screen.active { display: flex; animation: fadeIn 0.5s ease; }
+        .glass-card { background: rgba(19, 29, 51, 0.85); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 1.25rem; padding: 2.5rem; width: 100%; max-width: 520px; box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+        .input-field { width: 100%; padding: 0.8rem 1rem; background: var(--bg-card-alt); border: 1.5px solid var(--border); border-radius: 0.75rem; color: var(--text); font-size: 1rem; font-family: 'Space Grotesk', sans-serif; outline: none; }
+        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .input-field::placeholder { color: var(--text-muted); }
+        .input-error { border-color: var(--error) !important; }
+        .error-msg { font-size: 0.78rem; color: var(--error); margin-top: 0.25rem; display: none; }
+        .error-msg.visible { display: block; }
         
-        /* Animaciones para el destello visual de respuesta */
-        @keyframes flash-green-anim {
-            0% { background-color: rgba(16, 185, 129, 0.4); border-color: #10b981; }
-            100% { background-color: rgba(30, 41, 59, 1); border-color: rgba(51, 65, 85, 1); }
-        }
-        @keyframes flash-red-anim {
-            0% { background-color: rgba(244, 63, 94, 0.4); border-color: #f43f5e; }
-            100% { background-color: rgba(30, 41, 59, 1); border-color: rgba(51, 65, 85, 1); }
-        }
-        .flash-green {
-            animation: flash-green-anim 0.35s ease-out;
-        }
-        .flash-red {
-            animation: flash-red-anim 0.35s ease-out;
-        }
+        .input-cell { width: 72px; height: 72px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--text); background: var(--bg-card-alt); border: 2px dashed var(--border); border-radius: 0.75rem; outline: none; caret-color: var(--primary); -moz-appearance: textfield; }
+        .input-cell::-webkit-outer-spin-button, .input-cell::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .input-cell:focus { border-color: var(--primary); border-style: solid; box-shadow: 0 0 0 3px var(--primary-glow); }
+        
+        .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem 2rem; border-radius: 0.75rem; background: linear-gradient(135deg, var(--primary), var(--primary-dim)); color: #fff; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-accent { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem 2rem; border-radius: 0.75rem; background: linear-gradient(135deg, var(--accent), #d97706); color: #fff; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 4px 15px var(--accent-glow); }
+        .btn-accent:hover { transform: translateY(-2px); }
+        .btn-purple { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem 2rem; border-radius: 0.75rem; background: linear-gradient(135deg, var(--purple), #7c3aed); color: #fff; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; font-family: 'Space Grotesk', sans-serif; box-shadow: 0 4px 15px var(--purple-glow); }
+        .btn-purple:hover { transform: translateY(-2px); }
+        .btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.7rem 1.4rem; border-radius: 0.75rem; background: transparent; border: 1.5px solid var(--border); color: var(--text-muted); font-weight: 500; font-size: 0.9rem; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+        .label-text { display: block; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); }
+        .toast { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; padding: 0.8rem 1.2rem; border-radius: 0.75rem; font-size: 0.9rem; font-weight: 500; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--error); animation: fadeIn 0.3s ease; max-width: 320px; }
+
+        .flashcard { background: linear-gradient(145deg, #0f1b36, #162444); border: 2px solid var(--primary-dim); border-radius: 1.5rem; padding: 2.5rem 2rem; box-shadow: 0 0 40px var(--primary-glow); }
+        .flashcard-numbers { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2; }
+        .flashcard-num { font-family: 'JetBrains Mono', monospace; font-size: 2.8rem; font-weight: 700; color: var(--primary); text-shadow: 0 0 20px var(--primary-glow); min-width: 4rem; text-align: center; animation: numberReveal 0.6s ease backwards; }
+        
+        .countdown-ring { width: 100px; height: 100px; }
+        .countdown-ring circle { fill: none; stroke-width: 5; stroke-linecap: round; }
+        .countdown-bg { stroke: var(--border); }
+        .countdown-progress { stroke: var(--primary); transition: stroke-dashoffset 0.1s linear, stroke 0.5s; }
+        .countdown-text { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; fill: var(--text); }
+
+        .op-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-card-alt); padding: 1rem; border-radius: 0.75rem; border: 1px solid var(--border); }
+        .op-input { width: 70px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.4rem; outline: none; -moz-appearance: textfield; }
+        .op-input::-webkit-outer-spin-button, .op-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .op-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+
+        .grid-cell { display: flex; align-items: center; justify-content: center; background: var(--bg-card-alt); border: 1px solid var(--border); border-radius: 0.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: var(--text); cursor: pointer; transition: all 0.2s; aspect-ratio: 1; user-select: none; }
+        .grid-cell:hover { border-color: var(--purple); background: rgba(139, 92, 246, 0.1); }
+        .grid-cell.selected { background: var(--purple); color: #fff; border-color: var(--purple); transform: scale(0.95); }
+        .grid-cell.wrong { background: var(--error); color: #fff; border-color: var(--error); animation: shake 0.3s; }
+
+        .pi-btn { flex: 1; padding: 1.5rem; border-radius: 1rem; font-size: 2rem; font-weight: 800; cursor: pointer; border: 2px solid; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+        .pi-btn-p { border-color: var(--pink); color: var(--pink); background: rgba(236, 72, 153, 0.1); }
+        .pi-btn-p:hover { background: var(--pink); color: white; transform: scale(1.05); }
+        .pi-btn-i { border-color: var(--primary); color: var(--primary); background: rgba(20, 184, 166, 0.1); }
+        .pi-btn-i:hover { background: var(--primary); color: white; transform: scale(1.05); }
+        .rule-shift { animation: shake 0.4s ease-in-out; }
+
+        #adminApp { display: none; position: relative; z-index: 10; min-height: 100vh; padding: 2rem 1.5rem; max-width: 1200px; margin: 0 auto; }
+        #adminApp.active { display: block; animation: fadeIn 0.5s ease; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--bg-card); border-radius: 1rem; overflow: hidden; }
+        .data-table th { text-align: left; padding: 0.8rem 1rem; border-bottom: 2px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+        .data-table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+        .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.7rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: rgba(34,197,94,0.15); color: var(--success); }
+        .badge-error { background: rgba(239,68,68,0.15); color: var(--error); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--accent); }
+        .badge-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+        .badge-pink { background: rgba(236,72,153,0.15); color: var(--pink); }
+        .table-wrap { overflow-x: auto; border-radius: 1rem; border: 1px solid var(--border); margin-top: 1.5rem; }
+        .tab-btn { padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; background: transparent; color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; }
+        .tab-btn.active { background: var(--primary-glow); color: var(--primary); }
+
+        @media (max-width: 640px) { .glass-card { padding: 1.5rem; } .flashcard-num { font-size: 2rem; } .input-cell { width: 60px; height: 60px; font-size: 1.6rem; } .grid-cell { font-size: 0.8rem; } .pi-btn { padding: 1rem; font-size: 1.5rem; } }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
+<body>
+    <div class="bg-blobs" aria-hidden="true"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
 
-    <!-- Header / Navbar -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-2xl font-bold tracking-wider text-indigo-400">MATHERAPY</h1>
-        <div id="userInfo" class="text-sm text-slate-400 hidden">
-            Usuario: <span id="userNameDisplay" class="font-semibold text-slate-200"></span>
+    <!-- MODAL DE INSTRUCCIONES Y PAUSA GLOBAL -->
+    <div id="instructionModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-card text-center border border-[var(--primary-dim)] shadow-[0_0_50px_var(--primary-glow)]">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 bg-[var(--primary-glow)]">
+                <i class="fa-solid fa-circle-info text-2xl text-[var(--primary)]"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-[var(--text)]" id="modalInstructionTitle">Instrucciones del Reto</h3>
+            <div class="text-left space-y-3 mb-6 text-sm text-[var(--text-muted)]" id="modalInstructionBody"></div>
+            <button class="btn-primary w-full" onclick="closeInstructionModal()">
+                <i class="fa-solid fa-play"></i> Reanudar Actividad
+            </button>
         </div>
-    </header>
-
-    <!-- Main Content Container -->
-    <main class="flex-1 container mx-auto p-4 md:p-6 max-w-4xl flex flex-col justify-center">
-
-        <!-- 1. REGISTRO DE USUARIO -->
-        <section id="secRegister" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg my-auto">
-            <h2 class="text-xl font-semibold text-indigo-300 mb-4">Registro de Estudiante</h2>
-            <form id="formRegister" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1">Nombre Completo</label>
-                    <input type="text" id="inputNombre" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Edad</label>
-                        <input type="number" id="inputEdad" min="5" max="99" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1">Curso / Grado</label>
-                        <input type="text" id="inputCurso" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition-colors shadow-md">
-                    Iniciar Evaluación
-                </button>
-            </form>
-        </section>
-
-        <!-- 2. DASHBOARD / MENU DE PRUEBAS -->
-        <section id="secDashboard" class="hidden-section space-y-6">
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-100">Panel de Control</h2>
-                    <p class="text-slate-400 text-sm">Selecciona una prueba de funciones ejecutivas</p>
-                </div>
-                <button onclick="showAdminPanel()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg border border-slate-600 transition">
-                    Ver Panel Admin
-                </button>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- Card 1: Filtro Numérico Veloz (Grid) -->
-                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-lg font-bold text-indigo-300">Atención Sostenida: Filtro Grid</h3>
-                            <span class="bg-indigo-900/50 text-indigo-300 text-xs px-2.5 py-1 rounded border border-indigo-700">3 Minutos</span>
-                        </div>
-                        <p class="text-sm text-slate-400 mb-4">Identifica rápidamente los números que no pertenecen al patrón de pares e impares en una matriz dinámica.</p>
-                    </div>
-                    <button onclick="startIntrusoGameUI()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition shadow">
-                        Comenzar Test Grid
-                    </button>
-                </div>
-
-                <!-- Card 2: Secuencia Doble / Mitad -->
-                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-lg font-bold text-indigo-300">Atención Sostenida: Doble / Mitad</h3>
-                            <span class="bg-indigo-900/50 text-indigo-300 text-xs px-2.5 py-1 rounded border border-indigo-700">3 Minutos</span>
-                        </div>
-                        <p class="text-sm text-slate-400 mb-4">Observa la secuencia de números centrales. Presiona ¡INTRUSO! inmediatamente si el número es exactamente el doble o la mitad del anterior.</p>
-                    </div>
-                    <button onclick="startSeqGameUI()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition shadow">
-                        Comenzar Test Secuencia
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3. SECCIÓN JUEGO 1: INTRUSO GRID GAME -->
-        <section id="secIntrusoGame" class="hidden-section space-y-4">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-                <div>
-                    <span class="text-xs uppercase text-slate-400 block font-semibold">Tiempo Restante</span>
-                    <span id="intrusoTimer" class="text-2xl font-mono font-bold text-amber-400">03:00</span>
-                </div>
-                <div class="flex gap-4 text-center">
-                    <div>
-                        <span class="text-xs uppercase text-slate-400 block">Aciertos</span>
-                        <span id="intrusoAciertos" class="text-xl font-bold text-emerald-400">0</span>
-                    </div>
-                    <div>
-                        <span class="text-xs uppercase text-slate-400 block">Falsas Alarmas</span>
-                        <span id="intrusoFA" class="text-xl font-bold text-rose-400">0</span>
-                    </div>
-                    <div>
-                        <span class="text-xs uppercase text-slate-400 block">Omisiones</span>
-                        <span id="intrusoOmisiones" class="text-xl font-bold text-amber-400">0</span>
-                    </div>
-                </div>
-                <button onclick="closeIntrusoGame()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 px-3 py-1.5 rounded transition">
-                    Salir
-                </button>
-            </div>
-
-            <!-- Panel del Patrón Vigente -->
-            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-center">
-                <span class="text-sm text-slate-400 block mb-1">Regla Activa:</span>
-                <span id="intrusoRuleDisplay" class="text-lg font-bold text-indigo-300">Cargando regla...</span>
-            </div>
-
-            <!-- Matriz Numérica Dynamic Grid -->
-            <div id="intrusoGrid" class="grid grid-cols-3 md:grid-cols-4 gap-3 bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <!-- Se poblará dinámicamente -->
-            </div>
-
-            <div class="flex justify-center">
-                <button id="btnIntrusoTrigger" onclick="handleIntrusoAction()" class="w-full max-w-xs bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl shadow-lg text-lg tracking-wide transition transform active:scale-95">
-                    ¡DETECTADO!
-                </button>
-            </div>
-        </section>
-
-        <!-- 4. SECCIÓN JUEGO 2: SECUENCIA DOBLE / MITAD -->
-        <section id="secSeqGame" class="hidden-section space-y-4">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-                <div>
-                    <span class="text-xs uppercase text-slate-400 block font-semibold">Tiempo Restante</span>
-                    <span id="seqTimer" class="text-2xl font-mono font-bold text-amber-400">03:00</span>
-                </div>
-                <div class="flex gap-4 text-center">
-                    <div>
-                        <span class="text-xs uppercase text-slate-400 block">Aciertos</span>
-                        <span id="seqAciertos" class="text-xl font-bold text-emerald-400">0</span>
-                    </div>
-                    <div>
-                        <span class="text-xs uppercase text-slate-400 block">Falsas Alarmas</span>
-                        <span id="seqFA" class="text-xl font-bold text-rose-400">0</span>
-                    </div>
-                    <div>
-                        <span class="text-xs uppercase text-slate-400 block">Omisiones</span>
-                        <span id="seqOmisiones" class="text-xl font-bold text-amber-400">0</span>
-                    </div>
-                </div>
-                <button onclick="closeSeqGame()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 px-3 py-1.5 rounded transition">
-                    Salir
-                </button>
-            </div>
-
-            <!-- Regla e Instrucción -->
-            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-center">
-                <p class="text-sm text-slate-300">
-                    <span class="font-bold text-amber-400">Regla:</span> Presiona <span class="text-emerald-400 font-bold">¡INTRUSO!</span> únicamente si el número mostrado es exactamente el <span class="underline decoration-indigo-400 font-bold">DOBLE</span> o la <span class="underline decoration-indigo-400 font-bold">MITAD</span> del número justo anterior.
-                </p>
-            </div>
-
-            <!-- Contenedor del Número Central (con efecto destello visual) -->
-            <div id="seqNumberCard" class="bg-slate-800 border-2 border-slate-700 rounded-2xl p-12 text-center shadow-2xl min-h-[220px] flex flex-col justify-center items-center transition-all duration-200">
-                <span class="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Número Actual</span>
-                <span id="seqNumberDisplay" class="text-7xl md:text-8xl font-black text-indigo-400 tracking-tight font-mono">--</span>
-            </div>
-
-            <!-- Botón Intruso -->
-            <div class="flex justify-center pt-2">
-                <button id="btnSeqIntruso" onclick="handleSeqIntrusoAction()" class="w-full max-w-sm bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-extrabold py-4 px-6 rounded-xl shadow-xl text-xl tracking-wider transition transform active:scale-95 border-2 border-rose-400/30">
-                    ¡INTRUSO!
-                </button>
-            </div>
-        </section>
-
-        <!-- 5. PANEL DE ADMINISTRACIÓN Y RESULTADOS -->
-        <section id="secAdminPanel" class="hidden-section space-y-6">
-            <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <h2 class="text-xl font-bold text-indigo-300">Panel de Resultados y Métricas</h2>
-                <button onclick="showDashboard()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition">
-                    Volver al Inicio
-                </button>
-            </div>
-
-            <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-x-auto shadow-md">
-                <table id="tableIntrusoAtt" class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900 text-xs uppercase text-slate-400 border-b border-slate-700">
-                        <tr>
-                            <th class="p-3">Estudiante</th>
-                            <th class="p-3">Curso</th>
-                            <th class="p-3">Actividad</th>
-                            <th class="p-3 text-center">Aciertos</th>
-                            <th class="p-3 text-center">Falsas Alarmas</th>
-                            <th class="p-3 text-center">Omisiones</th>
-                            <th class="p-3 text-center">TR Medio (ms)</th>
-                            <th class="p-3 text-center">SD (Estabilidad)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableAdminBody" class="divide-y divide-slate-700">
-                        <!-- Se llena con Firestore -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Global Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-lg shadow-xl hidden transition-all z-50">
-        <span id="toastMsg">Notificación</span>
     </div>
 
-    <!-- SCRIPT PRINCIPAL LÓGICA & FIREBASE -->
-    <script>
-        // --- 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "TU_API_KEY_AQUI",
-            authDomain: "tu-proyecto.firebaseapp.com",
-            projectId: "tu-proyecto-id",
-            storageBucket: "tu-proyecto.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abcdef123456"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // --- 2. ESTADO GLOBAL Y LÓGICA DE USUARIO ---
-        const state = {
-            user: {
-                nombre: '',
-                edad: '',
-                curso: ''
-            }
-        };
-
-        document.getElementById('formRegister').addEventListener('submit', (e) => {
-            e.preventDefault();
-            state.user.nombre = document.getElementById('inputNombre').value.trim();
-            state.user.edad = document.getElementById('inputEdad').value;
-            state.user.curso = document.getElementById('inputCurso').value.trim();
-
-            document.getElementById('userNameDisplay').textContent = state.user.nombre;
-            document.getElementById('userInfo').classList.remove('hidden');
-
-            showDashboard();
-            showToast(`Bienvenido/a ${state.user.nombre}`);
-        });
-
-        function hideAllSections() {
-            document.getElementById('secRegister').classList.add('hidden-section');
-            document.getElementById('secDashboard').classList.add('hidden-section');
-            document.getElementById('secIntrusoGame').classList.add('hidden-section');
-            document.getElementById('secSeqGame').classList.add('hidden-section');
-            document.getElementById('secAdminPanel').classList.add('hidden-section');
-        }
-
-        function showDashboard() {
-            hideAllSections();
-            document.getElementById('secDashboard').classList.remove('hidden-section');
-        }
-
-        function showAdminPanel() {
-            hideAllSections();
-            document.getElementById('secAdminPanel').classList.remove('hidden-section');
-            fetchResults();
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').textContent = msg;
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
-        }
-
-        // --- 3. MOTOR DEL JUEGO 1: FILTRO NUMÉRICO VELOZ (GRID) ---
-        let intrusoState = {
-            timerInterval: null,
-            roundInterval: null,
-            timeRemaining: 180,
-            aciertos: 0,
-            falsasAlarmas: 0,
-            omisiones: 0,
-            reactionTimes: [],
-            currentNumbers: [],
-            hasIntruso: false,
-            intrusoClicked: false,
-            roundStartTime: 0,
-            ruleType: 'PAR'
-        };
-
-        function startIntrusoGameUI() {
-            hideAllSections();
-            document.getElementById('secIntrusoGame').classList.remove('hidden-section');
-            document.getElementById('btnIntrusoTrigger').disabled = false;
+    <!-- MODAL DE LA ACTIVIDAD INTERACTIVA: RASTREADOR DE SECUENCIAS -->
+    <div id="gamePracticeModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="glass-card text-center border border-[var(--purple)] shadow-[0_0_50px_var(--purple-glow)]" style="max-width: 450px;">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-[var(--purple)] flex items-center gap-2">
+                    <i class="fa-solid fa-bullseye"></i> Rastreador Simétrico
+                </h3>
+                <button class="text-[var(--text-muted)] hover:text-[var(--error)] text-lg" onclick="closePracticeGame()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
             
-            intrusoState.timeRemaining = 180;
-            intrusoState.aciertos = 0;
-            intrusoState.falsasAlarmas = 0;
-            intrusoState.omisiones = 0;
-            intrusoState.reactionTimes = [];
-            
-            updateIntrusoScoreboard();
-            
-            intrusoState.timerInterval = setInterval(() => {
-                intrusoState.timeRemaining--;
-                let min = Math.floor(intrusoState.timeRemaining / 60);
-                let sec = intrusoState.timeRemaining % 60;
-                document.getElementById('intrusoTimer').textContent = 
-                    `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            <p class="text-xs text-[var(--text-muted)] mb-4" id="gamePracticeInstructions">
+                Observa la secuencia simétrica que se iluminará y replícala exactamente en el mismo orden.
+            </p>
 
-                if (intrusoState.timeRemaining <= 0) {
-                    finishIntrusoGame();
-                }
-            }, 1000);
+            <div class="grid grid-cols-3 gap-3 my-6 max-w-[280px] mx-auto" id="practiceGridBoard"></div>
 
-            nextIntrusoRound();
-        }
+            <div class="flex justify-between items-center text-sm font-mono mb-4 px-2">
+                <span style="color: var(--text-muted);">Nivel: <span id="practiceLevel" class="text-[var(--accent)] font-bold">1/3</span></span>
+                <span style="color: var(--text-muted);">Estado: <span id="practiceStatus" class="text-[var(--primary)] font-bold">Esperando...</span></span>
+            </div>
 
-        function nextIntrusoRound() {
-            if (intrusoState.hasIntruso && !intrusoState.intrusoClicked) {
-                intrusoState.omisiones++;
-                updateIntrusoScoreboard();
-            }
+            <button id="btnStartPracticeSequence" class="btn-purple w-full" onclick="startPracticeSequence()">
+                <i class="fa-solid fa-play"></i> Mostrar Secuencia
+            </button>
+        </div>
+    </div>
 
-            intrusoState.intrusoClicked = false;
-            
-            intrusoState.ruleType = Math.random() > 0.5 ? 'PAR' : 'IMPAR';
-            document.getElementById('intrusoRuleDisplay').textContent = 
-                intrusoState.ruleType === 'PAR' ? "Selecciona cuando aparezca un IMPAR (El Intruso)" : "Selecciona cuando aparezca un PAR (El Intruso)";
-
-            intrusoState.hasIntruso = Math.random() < 0.4;
-            
-            generateGridNumbers();
-            renderGrid();
-            
-            intrusoState.roundStartTime = performance.now();
-
-            clearTimeout(intrusoState.roundInterval);
-            intrusoState.roundInterval = setTimeout(() => {
-                if (intrusoState.timeRemaining > 0) {
-                    nextIntrusoRound();
-                }
-            }, 2500);
-        }
-
-        function generateGridNumbers() {
-            intrusoState.currentNumbers = [];
-            const count = 8;
-            let intrusoPlaced = false;
-
-            for (let i = 0; i < count; i++) {
-                let num;
-                let isIntrusoCell = intrusoState.hasIntruso && !intrusoPlaced && (i === count - 1 || Math.random() < 0.3);
-
-                if (isIntrusoCell) {
-                    num = intrusoState.ruleType === 'PAR' ? getRandomOdd() : getRandomEven();
-                    intrusoPlaced = true;
-                } else {
-                    num = intrusoState.ruleType === 'PAR' ? getRandomEven() : getRandomOdd();
-                }
-                intrusoState.currentNumbers.push(num);
-            }
-
-            if (intrusoState.hasIntruso && !intrusoPlaced) {
-                const randomIndex = Math.floor(Math.random() * count);
-                intrusoState.currentNumbers[randomIndex] = intrusoState.ruleType === 'PAR' ? getRandomOdd() : getRandomEven();
-            }
-        }
-
-        function getRandomEven() {
-            return Math.floor(Math.random() * 45) * 2 + 2;
-        }
-
-        function getRandomOdd() {
-            return Math.floor(Math.random() * 45) * 2 + 1;
-        }
-
-        function renderGrid() {
-            const grid = document.getElementById('intrusoGrid');
-            grid.innerHTML = '';
-            intrusoState.currentNumbers.forEach((num) => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-700/60 border border-slate-600 rounded-lg p-4 text-center font-bold text-2xl text-slate-100 shadow-sm";
-                card.textContent = num;
-                grid.appendChild(card);
-            });
-        }
-
-        function handleIntrusoAction() {
-            if (intrusoState.intrusoClicked) return;
-            intrusoState.intrusoClicked = true;
-
-            const reactionTime = Math.round(performance.now() - intrusoState.roundStartTime);
-
-            if (intrusoState.hasIntruso) {
-                intrusoState.aciertos++;
-                intrusoState.reactionTimes.push(reactionTime);
-            } else {
-                intrusoState.falsasAlarmas++;
-            }
-
-            updateIntrusoScoreboard();
-        }
-
-        function updateIntrusoScoreboard() {
-            document.getElementById('intrusoAciertos').textContent = intrusoState.aciertos;
-            document.getElementById('intrusoFA').textContent = intrusoState.falsasAlarmas;
-            document.getElementById('intrusoOmisiones').textContent = intrusoState.omisiones;
-        }
-
-        function stopIntrusoGame() {
-            clearInterval(intrusoState.timerInterval);
-            clearTimeout(intrusoState.roundInterval);
-        }
-
-        function closeIntrusoGame() {
-            stopIntrusoGame();
-            showDashboard();
-        }
-
-        async function finishIntrusoGame() {
-            stopIntrusoGame();
-            document.getElementById('btnIntrusoTrigger').disabled = true;
-
-            let avgRT = 0;
-            let sdRT = 0;
-            
-            if (intrusoState.reactionTimes.length > 0) {
-                const sum = intrusoState.reactionTimes.reduce((a, b) => a + b, 0);
-                avgRT = Math.round(sum / intrusoState.reactionTimes.length);
-                const variance = intrusoState.reactionTimes.reduce((a, b) => a + Math.pow(b - avgRT, 2), 0) / intrusoState.reactionTimes.length;
-                sdRT = Math.round(Math.sqrt(variance));
-            }
-
-            const res = {
-                categoria: "Funciones Ejecutivas",
-                subcategoria: "Atención Sostenida - Filtro Intruso",
-                nombre: state.user.nombre,
-                edad: state.user.edad,
-                curso: state.user.curso,
-                metricas: {
-                    aciertos: intrusoState.aciertos,
-                    falsasAlarmas: intrusoState.falsasAlarmas,
-                    omisiones: intrusoState.omisiones,
-                    promedioTR_ms: avgRT,
-                    desviacionEstandarTR_ms: sdRT
-                },
-                fecha: new Date().toISOString()
-            };
-
-            try {
-                await db.collection("resultados").add(res);
-                showToast("Prueba de Filtro Grid completada y guardada.");
-            } catch (e) {
-                console.error("Error al guardar en Firebase:", e);
-                showToast("Error al guardar el resultado.");
-            }
-
-            closeIntrusoGame();
-        }
-
-
-        // --- 4. MOTOR DEL JUEGO 2: SECUENCIA DOBLE / MITAD (NUEVA ACTIVIDAD) ---
-        let seqState = {
-            timerInterval: null,
-            stepTimeout: null,
-            timeRemaining: 180, // 3 Minutos
-            aciertos: 0,
-            falsasAlarmas: 0,
-            omisiones: 0,
-            reactionTimes: [],
-            previousNumber: null,
-            currentNumber: null,
-            isTarget: false,
-            hasClicked: false,
-            numberStartTime: 0,
-            intervalMs: 1800 // Ritmo de cambio de número (1.8s)
-        };
-
-        function startSeqGameUI() {
-            hideAllSections();
-            document.getElementById('secSeqGame').classList.remove('hidden-section');
-            document.getElementById('btnSeqIntruso').disabled = false;
-
-            // Reiniciar estado
-            seqState.timeRemaining = 180;
-            seqState.aciertos = 0;
-            seqState.falsasAlarmas = 0;
-            seqState.omisiones = 0;
-            seqState.reactionTimes = [];
-            seqState.previousNumber = null;
-            seqState.currentNumber = null;
-            seqState.isTarget = false;
-            seqState.hasClicked = false;
-
-            updateSeqScoreboard();
-
-            // Reloj Principal (3 min)
-            seqState.timerInterval = setInterval(() => {
-                seqState.timeRemaining--;
-                let min = Math.floor(seqState.timeRemaining / 60);
-                let sec = seqState.timeRemaining % 60;
-                document.getElementById('seqTimer').textContent = 
-                    `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-
-                if (seqState.timeRemaining <= 0) {
-                    finishSeqGame();
-                }
-            }, 1000);
-
-            nextSeqStep();
-        }
-
-        function nextSeqStep() {
-            // Si el número anterior era objetivo y no se hizo clic -> Registra Omisión
-            if (seqState.isTarget && !seqState.hasClicked) {
-                seqState.omisiones++;
-                updateSeqScoreboard();
-            }
-
-            seqState.hasClicked = false;
-
-            // Generación de secuencia
-            if (seqState.previousNumber === null) {
-                // Primer número aleatorio entre 10 y 50
-                seqState.currentNumber = Math.floor(Math.random() * 41) + 10;
-                seqState.isTarget = false;
-            } else {
-                // Decidir si este paso será Doble/Mitad (~30% prob)
-                const forceTarget = Math.random() < 0.30;
-                const prev = seqState.previousNumber;
+    <div id="userApp">
+        <!-- REGISTRO CON DETECCIÓN DE RETORNO -->
+        <section class="screen active" id="screenRegister">
+            <div class="glass-card text-center">
+                <img src="https://z-cdn-media.chatglm.cn/files/0e49b2cf-e9f7-4ae3-b5a3-ce0a58d210a8.png?auth_key=1884216701-010d0348ba124471a9dadfeb31a14e13-0-6bae9c75ccb193834bc041cf203cfc55" alt="Logo Junior Fernández" style="width: 140px; margin: 0 auto 1.5rem;">
+                <h1 class="text-3xl font-bold mb-2">Retos Matemáticos</h1>
                 
-                if (forceTarget) {
-                    const canBeHalf = (prev % 2 === 0) && (prev / 2 >= 2);
-                    const canBeDouble = (prev * 2 <= 100);
+                <div id="returningUserBlock" style="display: none;" class="mb-6 p-4 rounded-xl bg-[var(--primary-glow)] border border-[var(--primary-dim)]">
+                    <p class="text-sm text-[var(--text)] font-medium mb-3">¡Hola de nuevo, <span id="returningUserName" class="text-[var(--primary)] font-bold"></span>! Detectamos tu perfil de <span id="returningUserCourse" class="font-bold text-[var(--accent)]"></span>.</p>
+                    <button class="btn-accent w-full text-sm !padding-[0.6rem]" onclick="cargarPerfilExistenteLocal()"><i class="fa-solid fa-chart-pie"></i> Ver mi Perfil e Intervención</button>
+                    <div class="text-xs text-[var(--text-muted)] my-2">ó si eres otra persona:</div>
+                </div>
 
-                    if (canBeHalf && canBeDouble) {
-                        seqState.currentNumber = Math.random() < 0.5 ? prev / 2 : prev * 2;
-                        seqState.isTarget = true;
-                    } else if (canBeHalf) {
-                        seqState.currentNumber = prev / 2;
-                        seqState.isTarget = true;
-                    } else if (canBeDouble) {
-                        seqState.currentNumber = prev * 2;
-                        seqState.isTarget = true;
-                    } else {
-                        seqState.currentNumber = generateDistractor(prev);
-                        seqState.isTarget = false;
-                    }
-                } else {
-                    seqState.currentNumber = generateDistractor(prev);
-                    seqState.isTarget = false;
-                }
-            }
+                <p style="color: var(--text-muted);" class="mb-6" id="registerSubtitle">Completa tus datos para comenzar</p>
+                
+                <form id="registerForm" novalidate autocomplete="off" class="text-left">
+                    <div class="mb-5"><label class="label-text">Nombre completo</label><input type="text" id="inputName" class="input-field" placeholder="Ej: Maria Lopez" required><div class="error-msg" id="errorName">Ingresa tu nombre</div></div>
+                    <div class="mb-5"><label class="label-text">Edad</label><input type="number" id="inputAge" class="input-field" placeholder="Ej: 12" min="3" max="99" required><div class="error-msg" id="errorAge">Ingresa una edad valida</div></div>
+                    <div class="mb-7"><label class="label-text">Curso</label><input type="text" id="inputCourse" class="input-field" placeholder="Ej: 6to Grado A" required><div class="error-msg" id="errorCourse">Ingresa tu curso</div></div>
+                    <button type="submit" class="btn-primary w-full"><i class="fa-solid fa-play"></i> Comenzar nuevos retos</button>
+                </form>
+            </div>
+        </section>
 
-            // Renderizar número central
-            document.getElementById('seqNumberDisplay').textContent = seqState.currentNumber;
-            seqState.numberStartTime = performance.now();
+        <!-- RETO 1: MEMORIA 1 -->
+        <section class="screen" id="screenInstrMemory1"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--primary-glow);"><i class="fa-solid fa-brain text-xl" style="color: var(--primary);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 1: Ordena los Numeros</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Memoria de trabajo</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Se mostrarán <strong style="color: var(--text);">5 números</strong> durante <strong style="color: var(--accent);">10 segundos</strong>.</p><p>2. Memorízalos y escríbelos en orden de <strong style="color: var(--text);">menor a mayor</strong>.</p></div><button class="btn-primary" onclick="startMemory1Display()"><i class="fa-solid fa-eye"></i> Ver numeros</button></div></section>
+        <section class="screen" id="screenDisplayMemory1"><div class="text-center w-full max-w-xl"><p class="text-sm font-semibold mb-4 uppercase tracking-widest" style="color: var(--accent);">Memoriza estos numeros</p><div class="flashcard mb-6" id="flashcard1"><div class="flashcard-numbers" id="flashcardNumbers1"></div></div><div class="flex justify-center mb-4"><svg class="countdown-ring" viewBox="0 0 100 100"><circle class="countdown-bg" cx="50" cy="50" r="42"/><circle class="countdown-progress" id="countdownProgress1" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="0" transform="rotate(-90 50 50)"/><text class="countdown-text" id="countdownText1" x="50" y="50" text-anchor="middle" dominant-baseline="central">10</text></svg></div></div></section>
+        <section class="screen" id="screenSortingMemory1"><div class="glass-card text-center" style="max-width: 580px;"><h2 class="text-xl font-bold mb-6">Escribe de menor a mayor</h2><div class="flex gap-3 justify-center flex-wrap mb-8" id="inputCellsContainer1"></div><button class="btn-primary w-full" id="btnVerifyMemory1" onclick="verifyMemory1()"><i class="fa-solid fa-check"></i> Verificar y seguir</button></div></section>
 
-            // Actualizar referencia anterior
-            seqState.previousNumber = seqState.currentNumber;
+        <!-- RETO 2: MEMORIA 2 -->
+        <section class="screen" id="screenInstrMemory2"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--primary-glow);"><i class="fa-solid fa-eye text-xl" style="color: var(--primary);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 2: Número y Distractor</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Memoria de trabajo</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Verás un número de <strong style="color: var(--text);">3 dígitos</strong> por 5 segundos.</p><p>2. Resolverás una <strong style="color: var(--accent);">operación</strong>.</p><p>3. Escribe el <strong style="color: var(--text);">número de 3 dígitos</strong> inicial. (5 veces)</p></div><button class="btn-primary" onclick="startMemory2()"><i class="fa-solid fa-play"></i> Comenzar</button></div></section>
+        <section class="screen" id="screenPlayMemory2">
+            <div class="glass-card text-center" style="max-width: 500px;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold">Reto 2</h2>
+                    <div class="flex gap-2 items-center">
+                        <button class="btn-ghost !padding-[0.4rem_0.8rem] text-xs" onclick="openInstructionModal('mem2')"><i class="fa-solid fa-circle-question"></i> Ayuda</button>
+                        <span class="badge badge-success font-mono" id="mem2Round">1 / 5</span>
+                    </div>
+                </div>
+                <div id="mem2Phase1">
+                    <p class="text-sm mb-4" style="color: var(--text-muted);">Memoriza este número:</p>
+                    <div class="text-5xl font-bold font-mono mb-6" style="color: var(--primary);" id="mem2NumberDisplay">123</div>
+                    <svg class="countdown-ring mx-auto" viewBox="0 0 100 100"><circle class="countdown-bg" cx="50" cy="50" r="42"/><circle class="countdown-progress" id="countdownProgress2" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="0" transform="rotate(-90 50 50)"/><text class="countdown-text" id="countdownText2" x="50" y="50" text-anchor="middle" dominant-baseline="central">5</text></svg>
+                </div>
+                <div id="mem2Phase2" style="display: none;"><p class="text-sm mb-4" style="color: var(--text-muted);">Resuelve esta operación:</p><div class="text-3xl font-bold font-mono mb-6" style="color: var(--accent);" id="mem2MathDisplay">12 + 5</div><input type="number" class="input-field text-center font-mono text-xl mb-4" id="mem2MathInput" placeholder="Resultado"><button class="btn-accent w-full" onclick="submitMathMem2()">Siguiente</button></div>
+                <div id="mem2Phase3" style="display: none;"><p class="text-sm mb-4" style="color: var(--text-muted);">Escribe el número de 3 dígitos que viste:</p><input type="number" class="input-field text-center font-mono text-xl mb-4" id="mem2RecallInput" placeholder="???"><button class="btn-primary w-full" onclick="submitRecallMem2()">Enviar respuesta</button></div>
+            </div>
+        </section>
 
-            // Programar el siguiente número
-            clearTimeout(seqState.stepTimeout);
-            seqState.stepTimeout = setTimeout(() => {
-                if (seqState.timeRemaining > 0) {
-                    nextSeqStep();
-                }
-            }, seqState.intervalMs);
+        <!-- RETO 3: ATENCIÓN -->
+        <section class="screen" id="screenInstrAttention"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--purple-glow);"><i class="fa-solid fa-crosshairs text-xl" style="color: var(--purple);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 3: Búsqueda Visual</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Atención Sostenida</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Verás una cuadrícula con <strong style="color: var(--text);">64 números</strong>.</p><p>2. Haz clic en el número indicado <strong style="color: var(--purple);">todas las veces</strong> que aparezca.</p></div><button class="btn-purple" onclick="startAttention()"><i class="fa-solid fa-play"></i> Comenzar</button></div></section>
+        <section class="screen" id="screenPlayAttention">
+            <div class="glass-card" style="max-width: 500px;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">Encuentra el número: <span class="text-2xl font-bold font-mono" style="color: var(--purple);" id="attTargetDisplay">25</span></h2>
+                    <button class="btn-ghost !padding-[0.4rem_0.8rem] text-xs" onclick="openInstructionModal('att')"><i class="fa-solid fa-circle-question"></i> Ayuda</button>
+                </div>
+                <div class="text-sm mb-4 text-center" style="color: var(--text-muted);">Encontrados: <span id="attFoundCount" class="font-bold" style="color: var(--purple);">0</span> / <span id="attTotalTarget">10</span></div>
+                <div class="grid grid-cols-8 gap-1.5 mb-6" id="attentionGrid"></div>
+                <button class="btn-purple w-full" onclick="verifyAttention()"><i class="fa-solid fa-check"></i> Terminar reto</button>
+            </div>
+        </section>
+
+        <!-- RETO 4: INHIBICIÓN -->
+        <section class="screen" id="screenInstrInhibition"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--accent-glow);"><i class="fa-solid fa-hand text-xl" style="color: var(--accent);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 4: Operaciones Selectivas</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Control inhibitorio</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Verás <strong style="color: var(--text);">8 operaciones</strong>.</p><p>2. Escribe el resultado <strong style="color: var(--accent);">SOLO si es MAYOR a 20</strong>.</p><p>3. Deja en blanco las demás.</p></div><button class="btn-accent" onclick="startInhibition()"><i class="fa-solid fa-play"></i> Comenzar</button></div></section>
+        <section class="screen" id="screenOperationsInhibition">
+            <div class="glass-card" style="max-width: 600px;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold">Responde solo si es > 20</h2>
+                    <button class="btn-ghost !padding-[0.4rem_0.8rem] text-xs" onclick="openInstructionModal('inh')"><i class="fa-solid fa-circle-question"></i> Ayuda</button>
+                </div>
+                <div class="space-y-3" id="operationsContainer"></div>
+                <div class="mt-8 text-center"><button class="btn-accent w-full" onclick="verifyInhibition()"><i class="fa-solid fa-check"></i> Terminar reto</button></div>
+            </div>
+        </section>
+
+        <!-- RETO 4B: INHIBICIÓN - INTERFERENCIA -->
+        <section class="screen" id="screenInstrInhibitionB"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--accent-glow);"><i class="fa-solid fa-brain text-xl" style="color: var(--accent);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 4B: Ignora la Palabra</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Control inhibitorio (Interferencia)</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Verás aparecer <strong style="color: var(--text);">8 operaciones matemáticas simples</strong> una por una.</p><p>2. Al lado aparecerá una palabra en grande (como "SUMA" o "RESTA").</p><p>3. <strong style="color: var(--error);">¡Ignora por completo la palabra!</strong> Resuelve únicamente la operación numérica que ves.</p></div><button class="btn-accent" onclick="startInhibitionB()"><i class="fa-solid fa-play"></i> Comenzar</button></div></section>
+        <section class="screen" id="screenPlayInhibitionB">
+            <div class="glass-card text-center" style="max-width: 450px;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold">Reto 4B</h2>
+                    <div class="flex gap-2 items-center">
+                        <button class="btn-ghost !padding-[0.4rem_0.8rem] text-xs" onclick="openInstructionModal('inhB')"><i class="fa-solid fa-circle-question"></i> Ayuda</button>
+                        <span class="badge badge-warning font-mono" id="inhBRound">1 / 8</span>
+                    </div>
+                </div>
+                <div class="p-4 rounded-xl mb-6 bg-slate-800/60 border border-slate-700/50">
+                    <p class="text-xs uppercase tracking-widest mb-1" style="color: var(--text-muted);">Palabra distractora:</p>
+                    <h3 class="text-3xl font-black tracking-wide uppercase font-mono" id="inhBDistractorText" style="color: var(--error); filter: drop-shadow(0 0 8px rgba(239,68,68,0.2));">SUMA</h3>
+                </div>
+                <div class="text-5xl font-bold font-mono mb-8" style="color: var(--text);" id="inhBOpText">4 × 3 = ?</div>
+                <input type="number" class="input-field text-center font-mono text-2xl mb-6" id="inhBInput" placeholder="Resultado" autocomplete="off">
+                <button class="btn-accent w-full" id="btnNextInhB" onclick="submitInhibitionB()"><i class="fa-solid fa-arrow-right"></i> Siguiente operación</button>
+            </div>
+        </section>
+
+        <!-- RETO 5: FLEXIBILIDAD -->
+        <section class="screen" id="screenInstrFlex"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--pink-glow);"><i class="fa-solid fa-shuffle text-xl" style="color: var(--pink);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 5: Cambio de Regla</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Flexibilidad cognitiva</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Verás operaciones <strong style="color: var(--text);">sin resultado</strong>.</p><p>2. Ronda 1: Selecciona <strong style="color: var(--pink);">P</strong> si es Par, <strong style="color: var(--primary);">I</strong> si es Impar.</p><p>3. Ronda 2: <strong style="color: var(--error);">¡La regla cambia!</strong> Selecciona <strong style="color: var(--primary);">I</strong> si es Par, <strong style="color: var(--pink);">P</strong> si es Impar.</p></div><button class="btn-primary" style="background: linear-gradient(135deg, var(--pink), #be185d); box-shadow: 0 4px 15px var(--pink-glow);" onclick="startFlexibility()"><i class="fa-solid fa-play"></i> Comenzar</button></div></section>
+        <section class="screen" id="screenPlayFlex">
+            <div class="glass-card text-center" style="max-width: 400px;">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="badge font-mono" id="flexRoundBadge" style="background: var(--pink-glow); color: var(--pink);">Ronda 1 - 1 / 4</span>
+                    <button class="btn-ghost !padding-[0.4rem_0.8rem] text-xs" onclick="openInstructionModal('flex')"><i class="fa-solid fa-circle-question"></i> Ayuda</button>
+                </div>
+                <div class="p-4 rounded-xl mb-6" id="flexRuleBox" style="background: var(--bg-card-alt); border: 1px solid var(--border);">
+                    <p class="text-xs uppercase tracking-widest mb-1" style="color: var(--text-muted);">Regla actual:</p>
+                    <h3 class="text-lg font-bold font-mono" id="flexRuleText" style="color: var(--pink);">P = Par | I = Impar</h3>
+                </div>
+                <div class="text-5xl font-bold font-mono mb-8" style="color: var(--text);" id="flexOpText">7 + 2</div>
+                <div class="flex gap-4">
+                    <button class="pi-btn pi-btn-p" onclick="submitFlex('P')">P</button>
+                    <button class="pi-btn pi-btn-i" onclick="submitFlex('I')">I</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PANEL DE INTERVENCIÓN -->
+        <section class="screen" id="screenFinal" style="max-width: 900px; margin: 0 auto; width: 100%;">
+            <div class="glass-card w-full !max-w-none text-center mb-6">
+                <div class="text-5xl mb-3">🚀</div>
+                <h2 class="text-2xl font-bold mb-1" style="color: var(--success);">¡Retos Completados!</h2>
+                <p style="color: var(--text-muted);" class="mb-4">Tu perfil cognitivo ha sido calculado por el sistema.</p>
+                
+                <div class="flex gap-2 justify-center border-b border-[rgba(123,139,170,0.12)] pb-2 mb-6 overflow-x-auto">
+                    <button class="tab-btn active" id="btnTabPerfilEst" onclick="switchEstTab('panelPerfil')">Mi Perfil</button>
+                    <button class="tab-btn" onclick="switchEstTab('panelPlan')">Plan Personalizado</button>
+                    <button class="tab-btn" onclick="switchEstTab('panelBiblioteca')">Mis Actividades</button>
+                    <button class="tab-btn" onclick="switchEstTab('panelProgreso')">Mi Progreso</button>
+                </div>
+
+                <div id="panelPerfil" class="est-panel">
+                    <h3 class="text-xl font-bold mb-4">Tu Mapa de Funciones Ejecutivas</h3>
+                    <div style="max-width: 400px; margin: 0 auto;"><canvas id="studentProfileChart"></canvas></div>
+                </div>
+
+                <div id="panelPlan" class="est-panel" style="display: none;">
+                    <div class="p-5 rounded-xl text-left border border-[rgba(20,184,166,0.3)] bg-[rgba(20,184,166,0.05)] mb-4">
+                        <h3 class="text-lg font-bold mb-2" style="color: var(--primary);"><i class="fa-solid fa-graduation-cap"></i> Enfoque Pedagógico Sugerido</h3>
+                        <p id="planDiagnostic" class="text-sm">Analizando resultados...</p>
+                    </div>
+                    <div class="p-5 rounded-xl text-left border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.05)]">
+                        <h4 class="font-semibold mb-2 text-sm uppercase tracking-wider" style="color: var(--accent);">Estrategia Recomendada</h4>
+                        <p id="planStrategy" class="text-sm text-slate-300">Generando recomendaciones didácticas personalizadas...</p>
+                    </div>
+                </div>
+
+                <div id="panelBiblioteca" class="est-panel" style="display: none;">
+                    <h3 class="text-lg font-bold mb-2 text-left">Actividades recomendadas para ti</h3>
+                    <p class="text-xs text-left mb-4 text-slate-400">Estas actividades fortalecen las habilidades matemáticas que requieren mayor soporte en este momento.</p>
+                    <div id="recommendedActivitiesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left"></div>
+                </div>
+
+                <div id="panelProgreso" class="est-panel" style="display: none;">
+                    <h3 class="text-lg font-bold mb-4">Historial de Trabajo y Ciclo de Reevaluación</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="p-4 rounded-xl bg-slate-800/50 text-left border border-slate-700">
+                            <span class="text-xs text-slate-400 uppercase">Estado del Ciclo</span>
+                            <div class="text-xl font-bold mt-1 text-teal-400">Fase de Intervención Activa</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-800/50 text-left border border-slate-700">
+                            <span class="text-xs text-slate-400 uppercase">Próximo Diagnóstico</span>
+                            <div class="text-xl font-bold mt-1 text-amber-400">En 21 días de práctica</div>
+                        </div>
+                    </div>
+                    <button class="btn-ghost text-xs" onclick="resetTamizajeParaReevaluacion()"><i class="fa-solid fa-rotate-left"></i> Forzar Reevaluación Temprana</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ADMINISTRADOR -->
+    <div id="adminApp">
+        <div id="adminLogin" class="flex items-center justify-center" style="min-height: 100vh;"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style="background: rgba(99,102,241,0.15);"><i class="fa-solid fa-shield-halved text-xl" style="color: #818cf8;"></i></div><h3 class="text-xl font-bold mb-1">Panel de Administrador</h3><input type="password" id="adminPasswordInput" class="input-field mb-2 mt-4" placeholder="Contraseña"><div class="error-msg mb-4" id="errorPassword">Contraseña incorrecta</div><button onclick="verifyAdminPassword()" class="btn-primary w-full"><i class="fa-solid fa-right-to-bracket"></i> Ingresar</button></div></div>
+        <div id="adminDashboard" style="display: none;">
+            <div class="flex justify-between items-center gap-4 mb-6"><h1 class="text-2xl font-bold">Funciones Ejecutivas</h1><button onclick="logoutAdmin()" class="btn-ghost"><i class="fa-solid fa-sign-out-alt"></i> Salir</button></div>
+            <div class="flex gap-2 mb-6 border-b border-[rgba(123,139,170,0.12)] pb-2 overflow-x-auto">
+                <button class="tab-btn active" onclick="switchTab('tabMem', this)">Memoria</button>
+                <button class="tab-btn" onclick="switchTab('tabAtt', this)">Atención</button>
+                <button class="tab-btn" onclick="switchTab('tabInh', this)">Inhibición</button>
+                <button class="tab-btn" onclick="switchTab('tabFlex', this)">Flexibilidad</button>
+                <button class="tab-btn" onclick="switchTab('tabChart', this)">Perfil</button>
+            </div>
+            <div id="tabMem">
+                <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 1: Ordenar</h3>
+                <div class="table-wrap mb-8"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Resultado</th><th>Errores</th></tr></thead><tbody id="tableMemory1"></tbody></table></div>
+                <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 2: Distractor</h3>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Recuerdo</th><th>Cálculo</th></tr></thead><tbody id="tableMemory2"></tbody></table></div>
+            </div>
+            <div id="tabAtt" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableAttention"></tbody></table></div></div>
+            <div id="tabInh" style="display: none;">
+                <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 4: Operaciones Selectivas</h3>
+                <div class="table-wrap mb-8"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos</th><th>Falsas Alarmas</th><th>Omisiones</th></tr></thead><tbody id="tableInhibition"></tbody></table></div>
+                <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Reto 4B: Ignora la Palabra (Interferencia)</h3>
+                <div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Resultado</th></tr></thead><tbody id="tableInhibitionB"></tbody></table></div>
+            </div>
+            <div id="tabFlex" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos R1</th><th>Aciertos R2</th><th>Total</th></tr></thead><tbody id="tableFlex"></tbody></table></div></div>
+            <div id="tabChart" style="display: none;"><div class="glass-card"><h3 class="text-xl font-bold mb-4">Perfil de Funciones Ejecutivas (%)</h3><div class="mb-6"><select id="chartUserSelect" class="input-field" onchange="renderProfileChart()"><option value="">Selecciona un usuario...</option></select></div><div style="max-width: 500px; margin: 0 auto; position: relative;"><canvas id="profileChart"></canvas></div></div></div>
+        </div>
+    </div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBPvo4UAztPUKREsXaG0dbwKE-nrldlJPk", authDomain: "tamizajefuncionesejecutivas.firebaseapp.com", projectId: "tamizajefuncionesejecutivas", storageBucket: "tamizajefuncionesejecutivas.firebasestorage.app", messagingSenderId: "730702504761", appId: "1:730702504761:web:bb21db2ec770e06af4fee8", measurementId: "G-8ZRJM1XBBZ" };
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
+    const ADMIN_PASSWORD = 'admin2024'; const CIRC = 2 * Math.PI * 42;
+
+    let state = {
+        user: { nombre: '', edad: '', curso: '' },
+        mem1: { numbers: [], correctOrder: [], userOrder: [], startTime: 0, elapsed: 0, interval: null },
+        mem2: { trials: [], currentTrial: 0, results: [], startTime: 0, interval: null },
+        att: { targetNum: 0, totalTarget: 10, gridNumbers: [], foundCount: 0, wrongClicks: 0, startTime: 0, elapsed: 0 },
+        inh: { operations: [], startTime: 0, elapsed: 0 },
+        inhB: { trials: [], current: 0, aciertos: 0, startTime: 0, elapsed: 0 },
+        flex: { trials: [], current: 0, scoreR1: 0, scoreR2: 0, startTime: 0, elapsed: 0 }
+    };
+
+    let allAdminData = []; let profileChartInstance = null;
+    let isPaused = false; let pauseStartTime = 0; let currentChallengeContext = '';
+
+    const textosInstrucciones = {
+        mem2: { title: "Reto 2: Número y Distractor", body: `<p>1. Estás viendo un número de <strong>3 dígitos</strong> para memorizarlo.</p><p>2. Luego debes resolver una operación matemática intermedia rápida.</p><p>3. Finalmente, escribe el número inicial de 3 dígitos.</p>` },
+        att: { title: "Reto 3: Búsqueda Visual", body: `<p>1. Busca en la cuadrícula el número objetivo resaltado en morado.</p><p>2. Haz clic en él <strong>todas las veces</strong> que aparezca en la pantalla.</p><p>3. El reto terminará automáticamente al encontrarlos todos.</p>` },
+        inh: { title: "Reto 4: Operaciones Selectivas", body: `<p>1. Analiza las operaciones aritméticas presentadas.</p><p>2. Escribe el resultado matemático <strong>SOLO si el valor final supera a 20</strong>.</p><p>3. Si el resultado es igual o menor a 20, déjalo completamente en blanco.</p>` },
+        inhB: { title: "Reto 4B: Ignora la Palabra", body: `<p>1. Aparece una operación matemática simple y una palabra grande de distracción.</p><p>2. <strong class="text-rose-400">¡Ignora por completo la palabra en rojo!</strong> (Aunque diga RESTA o MULTIPLICACIÓN).</p><p>3. Guíate únicamente por el operador aritmético central de la ecuación.</p>` },
+        flex: { title: "Reto 5: Cambio de Regla", body: `<p>1. Resuelve mentalmente la operación en pantalla.</p><p>2. <strong>Ronda 1:</strong> Presiona <span class="text-pink-400 font-bold">P</span> si el resultado es Par, o <span class="text-teal-400 font-bold">I</span> si es Impar.</p><p>3. <strong>Ronda 2:</strong> ¡La regla se invierte! Presiona <span class="text-teal-400 font-bold">I</span> si es Par, o <span class="text-pink-400 font-bold">P</span> si es Impar.</p>` }
+    };
+
+    function openInstructionModal(challengeKey) { isPaused = true; pauseStartTime = Date.now(); currentChallengeContext = challengeKey; const info = textosInstrucciones[challengeKey]; document.getElementById('modalInstructionTitle').innerText = info.title; document.getElementById('modalInstructionBody').innerHTML = info.body; const modal = document.getElementById('instructionModal'); modal.style.display = 'flex'; modal.classList.remove('hidden'); }
+    function closeInstructionModal() { const modal = document.getElementById('instructionModal'); modal.style.display = 'none'; modal.classList.add('hidden'); const d = Date.now() - pauseStartTime; if (currentChallengeContext === 'mem2' && state.mem2.interval) { state.mem2.startTime += d; } else if (currentChallengeContext === 'att') { state.att.startTime += d; } else if (currentChallengeContext === 'inh') { state.inh.startTime += d; } else if (currentChallengeContext === 'inhB') { state.inhB.startTime += d; } else if (currentChallengeContext === 'flex') { state.flex.startTime += d; } isPaused = false; }
+
+    function initRouter() { const urlParams = new URLSearchParams(window.location.search); if (urlParams.has('admin')) { document.getElementById('userApp').style.display = 'none'; document.getElementById('adminApp').classList.add('active'); } else { document.getElementById('userApp').style.display = 'block'; document.getElementById('adminApp').style.display = 'none'; } }
+    initRouter();
+    function showScreen(id) { document.querySelectorAll('#userApp .screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function formatTime(ms) { if(!ms) return '-'; const s = Math.floor(ms / 1000); const t = Math.floor((ms % 1000) / 100); return `${s}.${t}s`; }
+    function formatDate(iso) { const d = new Date(iso); return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); }
+    function showToast(message) { const existing = document.querySelector('.toast'); if(existing) existing.remove(); const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message; document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+
+    document.getElementById('registerForm').addEventListener('submit', function(e) { e.preventDefault(); let valid = true; const name = document.getElementById('inputName').value.trim(); const age = parseInt(document.getElementById('inputAge').value); const course = document.getElementById('inputCourse').value.trim(); const t = (c, i, i2) => { if(c) { document.getElementById(i).classList.add('visible'); document.getElementById(i2).classList.add('input-error'); valid=false; } else { document.getElementById(i).classList.remove('visible'); document.getElementById(i2).classList.remove('input-error'); } }; t(!name, 'errorName', 'inputName'); t(!age || age < 3 || age > 99, 'errorAge', 'inputAge'); t(!course, 'errorCourse', 'inputCourse'); if (!valid) return; state.user = { nombre: name, edad: age, curso: course }; showScreen('screenInstrMemory1'); });
+
+    function verificarUsuarioExistente() { const localUser = localStorage.getItem('math_therapy_user'); if (localUser) { const user = JSON.parse(localUser); state.user = user; document.getElementById('returningUserName').innerText = user.nombre; document.getElementById('returningUserCourse').innerText = user.curso; document.getElementById('returningUserBlock').style.display = 'block'; document.getElementById('registerSubtitle').innerText = "O registra un nuevo perfil a continuación:"; } }
+    setTimeout(verificarUsuarioExistente, 500);
+
+    function cargarPerfilExistenteLocal() {
+        if (!state.user || !state.user.nombre) return;
+        showToast("Recuperando tu plan de intervención...");
+        db.collection("usuarios_intervencion").where("estudiante.nombre", "==", state.user.nombre).where("estudiante.curso", "==", state.user.curso).get().then((querySnapshot) => {
+            if (!querySnapshot.empty) {
+                let documentos = []; querySnapshot.forEach(doc => documentos.push(doc.data())); documentos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); const scores = documentos[0].perfil_cognitivo; showScreen('screenFinal');
+                setTimeout(() => {
+                    const chartStatus = Chart.getChart("studentProfileChart"); if (chartStatus != undefined) chartStatus.destroy();
+                    const ctx = document.getElementById('studentProfileChart').getContext('2d');
+                    new Chart(ctx, { type: 'radar', data: { labels: ['Memoria de Trabajo', 'Atención Sostenida', 'Control Inhibitorio', 'Flexibilidad Cognitiva'], datasets: [{ data: [scores.memoria_trabajo, scores.atencion_sostenida, scores.control_inhibitorio, scores.flexibilidad_cognitiva], backgroundColor: 'rgba(20, 184, 166, 0.2)', borderColor: '#14b8a6', pointBackgroundColor: '#14b8a6' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#7b8baa', font: { family: 'Space Grotesk', size: 12 } } } }, plugins: { legend: { display: false } } } });
+                    generateInterventionPlan(scores);
+                }, 300);
+            } else { showToast("No se encontraron registros en la nube."); document.getElementById('returningUserBlock').style.display = 'none'; }
+        }).catch((err) => { console.error(err); showToast("Error al recuperar datos."); });
+    }
+
+    // RETO 1
+    function startMemory1Display() { state.mem1.numbers = []; let a = 0; while (state.mem1.numbers.length < 5 && a < 500) { const n = Math.floor(Math.random() * 18) + 2; if (!state.mem1.numbers.some(e => Math.abs(e - n) < 3)) state.mem1.numbers.push(n); a++; } state.mem1.correctOrder = [...state.mem1.numbers].sort((a, b) => a - b); state.mem1.userOrder = []; const c = document.getElementById('flashcardNumbers1'); c.innerHTML = ''; state.mem1.numbers.forEach(n => { const s = document.createElement('span'); s.className = 'flashcard-num'; s.textContent = n; c.appendChild(s); }); showScreen('screenDisplayMemory1'); const sT = Date.now(); const p = document.getElementById('countdownProgress1'); const tE = document.getElementById('countdownText1'); p.style.strokeDashoffset = '0'; p.style.stroke = 'var(--primary)'; tE.textContent = '10'; tE.style.fill = 'var(--text)'; clearInterval(state.mem1.interval); state.mem1.interval = setInterval(() => { const e = (Date.now() - sT) / 1000; const r = Math.max(0, 10 - e); p.style.strokeDashoffset = CIRC * (1 - r / 10); if (r <= 2) { p.style.stroke = 'var(--error)'; tE.style.fill = 'var(--error)'; } else if (r <= 4) { p.style.stroke = 'var(--accent)'; tE.style.fill = 'var(--accent)'; } tE.textContent = Math.ceil(r); if (r <= 0) { clearInterval(state.mem1.interval); startMemory1Sorting(); } }, 50); }
+    function startMemory1Sorting() { showScreen('screenSortingMemory1'); const c = document.getElementById('inputCellsContainer1'); c.innerHTML = ''; document.getElementById('btnVerifyMemory1').disabled = false; for (let i = 0; i < 5; i++) { const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'input-cell'; inp.id = `cell-${i}`; inp.maxLength = 2; inp.placeholder = i + 1; inp.setAttribute('inputmode', 'numeric'); inp.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); if (e.target.value.length >= 2) { const n = document.getElementById(`cell-${i + 1}`); if (n) n.focus(); else e.target.blur(); } }); c.appendChild(inp); } setTimeout(() => document.getElementById('cell-0').focus(), 100); state.mem1.startTime = Date.now(); }
+    async function verifyMemory1() { const uO = []; for (let i = 0; i < 5; i++) { const inp = document.getElementById(`cell-${i}`); const v = inp.value.trim(); if (v === '') { showToast('Completa todas las celdas.'); inp.focus(); return; } uO.push(parseInt(v)); } document.getElementById('btnVerifyMemory1').disabled = true; state.mem1.userOrder = uO; state.mem1.elapsed = Date.now() - state.mem1.startTime; let aC = true; const m = []; for (let i = 0; i < 5; i++) { if (state.mem1.userOrder[i] !== state.mem1.correctOrder[i]) { aC = false; m.push({ posicion: i + 1, elegido: state.mem1.userOrder[i], correcto: state.mem1.correctOrder[i] }); } } const res = { categoria: "Funciones Ejecutivas", subcategoria: "Memoria de Trabajo - Ordenar", nombre: state.user.nombre, edad: state.user.edad, curso: state.user.curso, esCorrecto: aC, errores: m, tiempoMs: state.mem1.elapsed, fecha: new Date().toISOString() }; try { await db.collection("resultados").add(res); showScreen('screenInstrMemory2'); } catch (e) { console.error(e); showToast("Error al guardar."); document.getElementById('btnVerifyMemory1').disabled = false; } }
+
+    // RETO 2
+    function startMemory2() { state.mem2.trials = []; state.mem2.results = []; state.mem2.currentTrial = 0; for (let i = 0; i < 5; i++) { const n = Math.floor(Math.random() * 900) + 100; const a = Math.floor(Math.random() * 15) + 2; const b = Math.floor(Math.random() * 10) + 2; const op = Math.random() > 0.5 ? '+' : '-'; let mathText, mathResult; if (op === '+') { mathText = `${a} + ${b}`; mathResult = a + b; } else { const max = Math.max(a, b), min = Math.min(a, b); mathText = `${max} - ${min}`; mathResult = max - min; } state.mem2.trials.push({ targetNum: n, mathText: mathText, mathResult: mathResult }); } showScreen('screenPlayMemory2'); startMem2Trial(); }
+    function startMem2Trial() { const t = state.mem2.trials[state.mem2.currentTrial]; document.getElementById('mem2Round').innerText = `${state.mem2.currentTrial + 1} / 5`; document.getElementById('mem2NumberDisplay').innerText = t.targetNum; document.getElementById('mem2Phase1').style.display = 'block'; document.getElementById('mem2Phase2').style.display = 'none'; document.getElementById('mem2Phase3').style.display = 'none'; state.mem2.startTime = Date.now(); const p = document.getElementById('countdownProgress2'); const tE = document.getElementById('countdownText2'); p.style.strokeDashoffset = '0'; p.style.stroke = 'var(--primary)'; tE.textContent = '5'; tE.style.fill = 'var(--text)'; clearInterval(state.mem2.interval); state.mem2.interval = setInterval(() => { if (isPaused) return; const e = (Date.now() - state.mem2.startTime) / 1000; const r = Math.max(0, 5 - e); p.style.strokeDashoffset = CIRC * (1 - r / 5); if (r <= 2) { p.style.stroke = 'var(--error)'; tE.style.fill = 'var(--error)'; } tE.textContent = Math.ceil(r); if (r <= 0) { clearInterval(state.mem2.interval); showMem2Math(); } }, 50); }
+    function showMem2Math() { const t = state.mem2.trials[state.mem2.currentTrial]; document.getElementById('mem2MathDisplay').innerText = t.mathText + " = ?"; document.getElementById('mem2MathInput').value = ''; document.getElementById('mem2Phase1').style.display = 'none'; document.getElementById('mem2Phase2').style.display = 'block'; document.getElementById('mem2Phase3').style.display = 'none'; document.getElementById('mem2MathInput').focus(); }
+    function submitMathMem2() { const v = document.getElementById('mem2MathInput').value.trim(); if (v === '') { showToast('Escribe el resultado.'); return; } state.mem2.results.push({ mathCorrect: parseInt(v) === state.mem2.trials[state.mem2.currentTrial].mathResult }); document.getElementById('mem2RecallInput').value = ''; document.getElementById('mem2Phase1').style.display = 'none'; document.getElementById('mem2Phase2').style.display = 'none'; document.getElementById('mem2Phase3').style.display = 'block'; document.getElementById('mem2RecallInput').focus(); }
+    function submitRecallMem2() { const v = document.getElementById('mem2RecallInput').value.trim(); if (v === '') { showToast('Escribe el número.'); return; } state.mem2.results[state.mem2.currentTrial].recallCorrect = parseInt(v) === state.mem2.trials[state.mem2.currentTrial].targetNum; state.mem2.currentTrial++; if (state.mem2.currentTrial < 5) { startMem2Trial(); } else { finishMemory2(); } }
+    async function finishMemory2() { const res = { categoria: "Funciones Ejecutivas", subcategoria: "Memoria de Trabajo - Distractor", nombre: state.user.nombre, edad: state.user.edad, curso: state.user.curso, metricas: { correctRecalls: state.mem2.results.filter(r => r.recallCorrect).length, correctMath: state.mem2.results.filter(r => r.mathCorrect).length, totalTrials: 5 }, fecha: new Date().toISOString() }; try { await db.collection("resultados").add(res); showScreen('screenInstrAttention'); } catch (e) { console.error(e); } }
+
+    // RETO 3
+    function startAttention() { showScreen('screenPlayAttention'); const gridContainer = document.getElementById('attentionGrid'); gridContainer.innerHTML = ''; state.att.foundCount = 0; state.att.wrongClicks = 0; document.getElementById('attFoundCount').innerText = '0'; state.att.targetNum = Math.floor(Math.random() * 90) + 10; document.getElementById('attTargetDisplay').innerText = state.att.targetNum; document.getElementById('attTotalTarget').innerText = state.att.totalTarget; state.att.gridNumbers = []; for(let i=0; i<state.att.totalTarget; i++) state.att.gridNumbers.push(state.att.targetNum); while(state.att.gridNumbers.length < 64) { const d = Math.floor(Math.random() * 90) + 10; if(d !== state.att.targetNum) state.att.gridNumbers.push(d); } state.att.gridNumbers.sort(() => Math.random() - 0.5); state.att.gridNumbers.forEach((num, index) => { const cell = document.createElement('div'); cell.className = 'grid-cell'; cell.textContent = num; cell.onclick = () => handleCellClick(cell, num); gridContainer.appendChild(cell); }); state.att.startTime = Date.now(); }
+    function handleCellClick(cell, num) { if (isPaused) return; if(cell.classList.contains('selected') || cell.classList.contains('wrong')) return; if(num === state.att.targetNum) { cell.classList.add('selected'); state.att.foundCount++; document.getElementById('attFoundCount').innerText = state.att.foundCount; if(state.att.foundCount === state.att.totalTarget) { setTimeout(() => verifyAttention(), 500); } } else { cell.classList.add('wrong'); state.att.wrongClicks++; setTimeout(() => cell.classList.remove('wrong'), 500); } }
+    async function verifyAttention() { state.att.elapsed = Date.now() - state.att.startTime; const om = state.att.totalTarget - state.att.foundCount; const res = { categoria: "Funciones Ejecutivas", subcategoria: "Atención Sostenida", nombre: state.user.nombre, edad: state.user.edad, curso: state.user.curso, metricas: { aciertos: state.att.foundCount, falsasAlarmas: state.att.wrongClicks, omisiones: om, totalObjetivo: state.att.totalTarget }, tiempoMs: state.att.elapsed, fecha: new Date().toISOString() }; try { await db.collection("resultados").add(res); showScreen('screenInstrInhibition'); } catch (e) { console.error(e); } }
+
+    // RETO 4
+    function startInhibition() { showScreen('screenOperationsInhibition'); const c = document.getElementById('operationsContainer'); c.innerHTML = ''; state.inh.operations = []; for (let i = 0; i < 8; i++) { const iG = i < 4 ? true : Math.random() > 0.5; const oT = Math.random() > 0.4 ? '+' : '-'; let a, b, r, t; if (oT === '+') { if (iG) { r = Math.floor(Math.random() * 30) + 21; a = Math.floor(Math.random() * (r - 1)) + 1; b = r - a; } else { r = Math.floor(Math.random() * 17) + 3; a = Math.floor(Math.random() * (r - 1)) + 1; b = r - a; } t = `${a} + ${b}`; } else { if (iG) { b = Math.floor(Math.random() * 15) + 1; r = Math.floor(Math.random() * 20) + 21; a = r + b; } else { a = Math.floor(Math.random() * 17) + 3; b = Math.floor(Math.random() * (a - 1)) + 1; r = a - b; } t = `${a} - ${b}`; } state.inh.operations.push({ result: r, textOp: t, esMayor20: r > 20 }); } state.inh.operations.sort(() => Math.random() - 0.5); state.inh.operations.forEach((op, i) => { const r = document.createElement('div'); r.className = 'op-row'; r.innerHTML = `<span class="font-mono text-lg font-bold" style="color: var(--text); min-width: 120px;">${op.textOp} = </span><input type="number" class="op-input" id="op-input-${i}" placeholder="?" autocomplete="off">`; c.appendChild(r); }); state.inh.startTime = Date.now(); }
+    async function verifyInhibition() { state.inh.elapsed = Date.now() - state.inh.startTime; let a = 0, o = 0, f = 0, rC = 0; state.inh.operations.forEach((op, i) => { const inp = document.getElementById(`op-input-${i}`); const v = inp.value.trim() !== '' ? parseInt(inp.value.trim()) : null; if (op.esMayor20) { if (v === op.result) a++; else o++; } else { if (v === null) rC++; else f++; } }); const res = { categoria: "Funciones Ejecutivas", subcategoria: "Control Inhibitorio", nombre: state.user.nombre, edad: state.user.edad, curso: state.user.curso, metricas: { aciertos: a, omisiones: o, falsasAlarmas: f, rechazosCorrectos: rC }, tiempoMs: state.inh.elapsed, fecha: new Date().toISOString() }; try { await db.collection("resultados").add(res); showScreen('screenInstrInhibitionB'); } catch (e) { console.error(e); } }
+
+    // RETO 4B
+    function startInhibitionB() {
+        state.inhB = { trials: [], current: 0, aciertos: 0, startTime: Date.now(), elapsed: 0 }; const operadores = [{ signo: '+', palabra: 'SUMA', resolver: (a,b) => a+b }, { signo: '-', palabra: 'RESTA', resolver: (a,b) => a-b }, { signo: '×', palabra: 'MULTIPLICACIÓN', resolver: (a,b) => a*b }];
+        for (let i = 0; i < 8; i++) { let opReal = operadores[Math.floor(Math.random() * operadores.length)]; let opDistractor = operadores[Math.floor(Math.random() * operadores.length)]; let a = Math.floor(Math.random() * 9) + 2; let b = Math.floor(Math.random() * 8) + 2; if (opReal.signo === '-') { a = Math.max(a, b); b = Math.min(a, b); } let resCorrecto = opReal.resolver(a, b); let textoOp = `${a} ${opReal.signo} ${b}`; state.inhB.trials.push({ texto: textoOp, resultado: resCorrecto, distractorText: opDistractor.palabra }); }
+        showScreen('screenPlayInhibitionB'); renderInhibitionBTrial();
+    }
+    function renderInhibitionBTrial() { let t = state.inhB.trials[state.inhB.current]; document.getElementById('inhBRound').innerText = `${state.inhB.current + 1} / 8`; document.getElementById('inhBDistractorText').innerText = t.distractorText; document.getElementById('inhBOpText').innerText = t.texto + " = ?"; document.getElementById('inhBInput').value = ''; document.getElementById('inhBInput').focus(); }
+    async function submitInhibitionB() {
+        if (isPaused) return; const inputVal = document.getElementById('inhBInput').value.trim(); if (inputVal === '') { showToast('Por favor escribe tu respuesta.'); return; }
+        let t = state.inhB.trials[state.inhB.current]; if (parseInt(inputVal) === t.resultado) { state.inhB.aciertos++; }
+        state.inhB.current++; if (state.inhB.current < 8) { renderInhibitionBTrial(); } else {
+            state.inhB.elapsed = Date.now() - state.inhB.startTime; const res = { categoria: "Funciones Ejecutivas", subcategoria: "Control Inhibitorio - Interferencia", nombre: state.user.nombre, edad: state.user.edad, curso: state.user.curso, metricas: { aciertos: state.inhB.aciertos, totalObjetivo: 8 }, tiempoMs: state.inhB.elapsed, fecha: new Date().toISOString() };
+            try { await db.collection("resultados").add(res); } catch(e) { console.error(e); } showScreen('screenInstrFlex');
         }
+    }
 
-        function generateDistractor(prev) {
-            let num;
-            do {
-                num = Math.floor(Math.random() * 80) + 4;
-            } while (num === prev || num === prev * 2 || (prev % 2 === 0 && num === prev / 2));
-            return num;
+    // RETO 5
+    function startFlexibility() {
+        state.flex = { trials: [], current: 0, scoreR1: 0, scoreR2: 0, startTime: Date.now(), elapsed: 0 };
+        for (let i = 0; i < 8; i++) { let a = Math.floor(Math.random() * 9) + 2; let b = Math.floor(Math.random() * 9) + 2; let op = Math.random() > 0.5 ? '+' : '-'; let res, text; if (op === '+') { res = a + b; text = `${a} + ${b}`; } else { let max = Math.max(a,b), min = Math.min(a,b); res = max - min; text = `${max} - ${min}`; } state.flex.trials.push({ text: text, result: res, isEven: res % 2 === 0, phase: i < 4 ? 1 : 2 }); }
+        showScreen('screenPlayFlex'); renderFlexTrial();
+    }
+    function renderFlexTrial() {
+        let t = state.flex.trials[state.flex.current]; document.getElementById('flexOpText').innerText = t.text + " = ?"; const badge = document.getElementById('flexRoundBadge'); const ruleBox = document.getElementById('flexRuleBox'); const ruleText = document.getElementById('flexRuleText');
+        if (t.phase === 1) { badge.innerText = `Ronda 1 - ${state.flex.current + 1} / 4`; badge.style.background = 'var(--pink-glow)'; badge.style.color = 'var(--pink)'; ruleText.innerText = "P = Par | I = Impar"; ruleText.style.color = "var(--pink)"; ruleBox.style.borderColor = "var(--pink)"; } 
+        else { badge.innerText = `Ronda 2 - ${state.flex.current - 3} / 4`; badge.style.background = 'rgba(239,68,68,0.15)'; badge.style.color = 'var(--error)'; ruleText.innerText = "¡CAMBIO! I = Par | P = Impar"; ruleText.style.color = "var(--error)"; ruleBox.style.borderColor = "var(--error)"; ruleBox.classList.add('rule-shift'); setTimeout(() => ruleBox.classList.remove('rule-shift'), 400); }
+    }
+    function submitFlex(ans) { if (isPaused) return; let t = state.flex.trials[state.flex.current]; let correctPar = t.isEven ? 'P' : 'I'; let correctAns = t.phase === 1 ? correctPar : (correctPar === 'P' ? 'I' : 'P'); if (ans === correctAns) { if (t.phase === 1) state.flex.scoreR1++; else state.flex.scoreR2++; } state.flex.current++; if (state.flex.current < 8) { renderFlexTrial(); } else { finishFlex(); } }
+
+    // CIERRE FINAL
+    async function finishFlex() {
+        state.flex.elapsed = Date.now() - state.flex.startTime; let mem1Aciertos = 0; if (state.mem1.userOrder && state.mem1.correctOrder) { state.mem1.userOrder.forEach((num, idx) => { if (num === state.mem1.correctOrder[idx]) mem1Aciertos++; }); } else { mem1Aciertos = 5; }
+        let mem2Aciertos = 0; if (state.mem2.results && Array.isArray(state.mem2.results)) { mem2Aciertos = state.mem2.results.filter(r => r.recallCorrect === true).length; } if (mem2Aciertos === 0 && state.mem2.currentTrial) { mem2Aciertos = Math.min(state.mem2.currentTrial, 5); }
+        let attNeto = state.att.foundCount || 0; let aciertosInhibicion = 0; let totalOperacionesEvaluadas = 0;
+        try { const filasOp = document.querySelectorAll('#operationsContainer .op-row'); if (filasOp.length > 0) { totalOperacionesEvaluadas = filasOp.length; filasOp.forEach(fila => { const textoOp = fila.querySelector('span').innerText.replace(' = ', '').trim(); const valorInput = fila.querySelector('.op-input').value.trim(); const solucionReal = eval(textoOp); if (solucionReal > 20) { if (parseInt(valorInput) === solucionReal) aciertosInhibicion++; } else { if (valorInput === "") aciertosInhibicion++; } }); } } catch(err) { console.error(err); }
+        const resHistoricoFlex = { categoria: "Funciones Ejecutivas", subcategoria: "Flexibilidad Cognitiva", nombre: state.user.nombre, edad: state.user.edad, curso: state.user.curso, metricas: { aciertosR1: state.flex.scoreR1 || 0, aciertosR2: state.flex.scoreR2 || 0, totalAciertos: (state.flex.scoreR1 || 0) + (state.flex.scoreR2 || 0) }, tiempoMs: state.flex.elapsed, fecha: new Date().toISOString() };
+        const resultadosFinales = { mem1_aciertos: mem1Aciertos, mem2_aciertos: mem2Aciertos, att_aciertos: attNeto, inh_aciertos: aciertosInhibicion, inh_totales: totalOperacionesEvaluadas || 8, inhB_aciertos: state.inhB.aciertos || 0, flex_r1: state.flex.scoreR1 || 0, flex_r2: state.flex.scoreR2 || 0 };
+        try { await db.collection("resultados").add(resHistoricoFlex); } catch(e) { console.error(e); } showScreen('screenFinal'); finalizarTamizajeYGuardar(resultadosFinales);
+    }
+
+    function finalizarTamizajeYGuardar(resultadosFinales) {
+        const scoreInh1 = (resultadosFinales.inh_aciertos / resultadosFinales.inh_totales) * 100; const scoreInh2 = (resultadosFinales.inhB_aciertos / 8) * 100;
+        const scores = { memoria_trabajo: Math.round(((resultadosFinales.mem1_aciertos + resultadosFinales.mem2_aciertos) / 10) * 100), atencion_sostenida: Math.round((resultadosFinales.att_aciertos / 10) * 100), control_inhibitorio: Math.round((scoreInh1 + scoreInh2) / 2), flexibilidad_cognitiva: Math.round(((resultadosFinales.flex_r1 + resultadosFinales.flex_r2) / 8) * 100) };
+        for (let key in scores) { if (scores[key] > 100) scores[key] = 100; if (scores[key] < 0) scores[key] = 0; }
+        db.collection("usuarios_intervencion").add({ estudiante: state.user, fecha: new Date().toISOString(), perfil_cognitivo: scores, metricas_crudas: resultadosFinales }).then((docRef) => {
+            localStorage.setItem('math_therapy_user', JSON.stringify(state.user)); showToast("¡Plan de intervención activado!");
+            const ctx = document.getElementById('studentProfileChart').getContext('2d');
+            new Chart(ctx, { type: 'radar', data: { labels: ['Memoria de Trabajo', 'Atención Sostenida', 'Control Inhibitorio', 'Flexibilidad Cognitiva'], datasets: [{ data: [scores.memoria_trabajo, scores.atencion_sostenida, scores.control_inhibitorio, scores.flexibilidad_cognitiva], backgroundColor: 'rgba(20, 184, 166, 0.2)', borderColor: '#14b8a6', pointBackgroundColor: '#14b8a6' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, pointLabels: { color: '#7b8baa', font: { family: 'Space Grotesk', size: 12 } } } }, plugins: { legend: { display: false } } } });
+            generateInterventionPlan(scores);
+        }).catch((error) => { console.error(error); showToast("Error de conexión al generar el plan."); });
+    }
+
+    function switchEstTab(panelId) { document.querySelectorAll('.est-panel').forEach(p => p.style.display = 'none'); document.getElementById(panelId).style.display = 'block'; const container = document.getElementById('btnTabPerfilEst').parentElement; container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); }
+
+    function generateInterventionPlan(scores) {
+        let lowScore = 100; let weakFunction = ''; for (const [key, value] of Object.entries(scores)) { if (value < lowScore) { lowScore = value; weakFunction = key; } }
+        const bibliotecaEstatica = {
+            memoria_trabajo: [{ titulo: "Cadenas Operativas Inversas", desc: "Resuelve sumas encadenadas reteniendo resultados parciales en mente.", icon: "fa-link" }, { titulo: "Matrices Numéricas Ocultas", desc: "Ubica coordenadas matemáticas en una cuadrícula que desaparece.", icon: "fa-table" }],
+            atencion_sostenida: [{ titulo: "Rastreador de Secuencias Simétricas", desc: "Encuentra patrones geométricos continuos sin perder la concentración.", icon: "fa-bullseye" }, { titulo: "Filtro Numérico Veloz", desc: "Detecta múltiplos específicos en ráfagas de números de alta velocidad.", icon: "fa-bolt" }],
+            control_inhibitorio: [{ titulo: "Cruces de Signos Conflictivos", desc: "Resuelve operaciones donde los signos cambian de color y significado.", icon: "fa-ban" }, { titulo: "Desafío Mayor a Veinte", desc: "Cálculo aritmético rápido ignorando distractores menores automatizados.", icon: "fa-hand" }],
+            flexibilidad_cognitiva: [{ titulo: "Alternador Aritmético Súbito", desc: "Cambia entre sumas y restas inmediatamente según la señal visual cambiante.", icon: "fa-shuffle" }, { titulo: "Clasificador de Polígonos Dinámico", desc: "Ordena figuras geométricas bajo reglas de clasificación mutables.", icon: "fa-shapes" }]
+        };
+        const guiasDidacticas = {
+            memoria_trabajo: { diag: "Se observa una sobrecarga en la memoria de trabajo que afecta la retención de datos intermedios al procesar retos aritméticos.", strat: "Uso prioritario de la aproximación Concreta-Pictórica-Abstracta. Permitir andamiaje visual (anotar pasos intermedios) antes de automatizar el cálculo mental." },
+            atencion_sostenida: { diag: "Presenta fluctuaciones en la atención sostenida que causan omisiones involuntarias en tareas de conteo masivo o verificación visual.", strat: "Dosificar las sesiones matemáticas en bloques de 10 minutos. Usar marcadores visuales para el seguimiento de lectura de problemas." },
+            control_inhibitorio: { diag: "Dificultad en el control inhibitorio, manifestando respuestas impulsivas ante estímulos o distractores numéricos familiares.", strat: "Modelado cognitivo basado en autoinstrucciones ('Paro, Pienso, Actúo'). Trabajar la verificación explícita antes de dar por buena una respuesta." },
+            flexibilidad_cognitiva: { diag: "Se evidencia rigidez procedimental al transicionar entre reglas o instrucciones operacionales alternadas.", strat: "Plantear problemas con múltiples vías de solución. Cambiar intencionalmente los contextos del problema para evitar la mecanización estricta." }
+        };
+        const guia = guiasDidacticas[weakFunction] || guiasDidacticas['control_inhibitorio']; document.getElementById('planDiagnostic').innerText = guia.diag; document.getElementById('planStrategy').innerText = guia.strat;
+        const actividadesGrid = document.getElementById('recommendedActivitiesGrid'); actividadesGrid.innerHTML = ''; const actividadesAsignadas = bibliotecaEstatica[weakFunction] || bibliotecaEstatica['control_inhibitorio'];
+        
+        actividadesAsignadas.forEach(act => {
+            const esRastreador = act.titulo === "Rastreador de Secuencias Simétricas";
+            const clickAction = esRastreador ? `openPracticeGame()` : `showToast('Esta actividad estará disponible en la próxima actualización.')`;
+            
+            actividadesGrid.innerHTML += `
+                <div class="p-4 rounded-xl bg-[var(--bg-card-alt)] border border-[var(--border)] hover:border-[var(--purple)] transition-all">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-[var(--purple)]">
+                            <i class="fa-solid ${act.icon} text-lg"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-[var(--text)]">${act.titulo}</h4>
+                    </div>
+                    <p class="text-xs text-[var(--text-muted)] mb-3">${act.desc}</p>
+                    <button class="text-xs font-semibold text-[var(--primary)] hover:underline flex items-center gap-1" onclick="${clickAction}">
+                        Iniciar práctica <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>`;
+        });
+    }
+
+    function resetTamizajeParaReevaluacion() { if(confirm("¿Quieres iniciar un nuevo tamizaje de reevaluación?")) { state.mem2.currentTrial = 0; state.mem2.results = []; state.att.foundCount = 0; state.att.wrongClicks = 0; state.flex.current = 0; state.flex.scoreR1 = 0; state.flex.scoreR2 = 0; showScreen('screenInstrMemory1'); } }
+
+    // ADMIN
+    function verifyAdminPassword() { if (document.getElementById('adminPasswordInput').value === ADMIN_PASSWORD) { document.getElementById('adminLogin').style.display = 'none'; document.getElementById('adminDashboard').style.display = 'block'; loadAdminData(); } else { document.getElementById('errorPassword').classList.add('visible'); setTimeout(() => document.getElementById('errorPassword').classList.remove('visible'), 2000); } }
+    document.getElementById('adminPasswordInput').addEventListener('keydown', e => { if(e.key === 'Enter') verifyAdminPassword(); });
+    function logoutAdmin() { document.getElementById('adminDashboard').style.display = 'none'; document.getElementById('adminLogin').style.display = 'flex'; document.getElementById('adminPasswordInput').value = ''; }
+    function switchTab(tabId, btn) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); ['tabMem', 'tabAtt', 'tabInh', 'tabFlex', 'tabChart'].forEach(id => document.getElementById(id).style.display = 'none'); document.getElementById(tabId).style.display = 'block'; }
+
+    async function loadAdminData() {
+        const snapshot = await db.collection("resultados").orderBy("fecha", "desc").get(); allAdminData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const mem1 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Ordenar"); const mem2 = allAdminData.filter(r => r.subcategoria === "Memoria de Trabajo - Distractor"); const att = allAdminData.filter(r => r.subcategoria === "Atención Sostenida"); const inh = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio"); const inhB = allAdminData.filter(r => r.subcategoria === "Control Inhibitorio - Interferencia"); const flex = allAdminData.filter(r => r.subcategoria === "Flexibilidad Cognitiva");
+
+        document.getElementById('tableMemory1').innerHTML = mem1.map(r => { const b = r.esCorrecto ? '<span class="badge badge-success">Correcto</span>' : '<span class="badge badge-error">Incorrecto</span>'; const e = r.errores.length === 0 ? 'Ninguno' : r.errores.map(e => `Pos.${e.posicion}: ${e.elegido} (Era ${e.correcto})`).join('<br>'); return `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td>${b}</td><td class="text-xs">${e}</td></tr>`; }).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        document.getElementById('tableMemory2').innerHTML = mem2.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.correctRecalls} / 5</span></td><td><span class="badge badge-warning">${r.metricas.correctMath} / 5</span></td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        document.getElementById('tableAttention').innerHTML = att.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        document.getElementById('tableInhibition').innerHTML = inh.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        document.getElementById('tableInhibitionB').innerHTML = inhB.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-purple">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+        document.getElementById('tableFlex').innerHTML = flex.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertosR1} / 4</span></td><td><span class="badge badge-pink">${r.metricas.aciertosR2} / 4</span></td><td><span class="badge badge-purple">${r.metricas.totalAciertos} / 8</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`;
+
+        const users = [...new Set(allAdminData.map(r => r.nombre))].filter(Boolean); const select = document.getElementById('chartUserSelect'); select.innerHTML = '<option value="">Selecciona un usuario...</option>'; users.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; select.appendChild(o); });
+    }
+
+    function renderProfileChart() {
+        const userName = document.getElementById('chartUserSelect').value; if (!userName) { if(profileChartInstance) profileChartInstance.destroy(); return; }
+        const userData = allAdminData.filter(r => r.nombre === userName); let memScore = 0, attScore = 0, inhScore = 0, flexScore = 0;
+        const m1 = userData.find(r => r.subcategoria === "Memoria de Trabajo - Ordenar"); const m2 = userData.find(r => r.subcategoria === "Memoria de Trabajo - Distractor"); let m1Score = m1 ? ((5 - m1.errores.length) / 5) * 100 : null; let m2Score = m2 ? (m2.metricas.correctRecalls / 5) * 100 : null; if (m1Score !== null && m2Score !== null) memScore = (m1Score + m2Score) / 2; else if (m1Score !== null) memScore = m1Score; else if (m2Score !== null) memScore = m2Score;
+        const att = userData.find(r => r.subcategoria === "Atención Sostenida"); if (att) { let hitScore = (att.metricas.aciertos / att.metricas.totalObjetivo) * 50; let totalDistractors = 64 - att.metricas.totalObjetivo; let correctIgnores = Math.max(0, totalDistractors - att.metricas.falsasAlarmas); let ignoreScore = totalDistractors > 0 ? (correctIgnores / totalDistractors) * 50 : 50; attScore = hitScore + ignoreScore; }
+        const inh1 = userData.find(r => r.subcategoria === "Control Inhibitorio"); const inh2 = userData.find(r => r.subcategoria === "Control Inhibitorio - Interferencia");
+        let inh1Score = 0; if (inh1) { let totalPos = inh1.metricas.aciertos + inh1.metricas.omisiones; let totalNeg = inh1.metricas.falsasAlarmas + inh1.metricas.rechazosCorrectos; let hitScore = totalPos > 0 ? (inh1.metricas.aciertos / totalPos) * 50 : 0; let ignoreScore = totalNeg > 0 ? (inh1.metricas.rechazosCorrectos / totalNeg) * 50 : 50; inh1Score = hitScore + ignoreScore; }
+        let inh2Score = inh2 ? (inh2.metricas.aciertos / inh2.metricas.totalObjetivo) * 100 : inh1Score; if (inh1 && inh2) inhScore = (inh1Score + inh2Score) / 2; else if (inh1) inhScore = inh1Score; else if (inh2) inhScore = inh2Score;
+        const flex = userData.find(r => r.subcategoria === "Flexibilidad Cognitiva"); if (flex && flex.metricas) { let total = flex.metricas.totalAciertos !== undefined ? flex.metricas.totalAciertos : ((flex.metricas.aciertosR1 || 0) + (flex.metricas.aciertosR2 || 0)); flexScore = (total / 8) * 100; }
+        const data = { labels: ['Memoria de Trabajo', 'Atención Sostenida', 'Control Inhibitorio', 'Flexibilidad Cognitiva'], datasets: [{ label: 'Nivel (%)', data: [memScore.toFixed(1), attScore.toFixed(1), inhScore.toFixed(1), flexScore.toFixed(1)], fill: true, backgroundColor: 'rgba(20, 184, 166, 0.2)', borderColor: 'rgb(20, 184, 166)', pointBackgroundColor: 'rgb(20, 184, 166)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgb(20, 184, 166)' }] };
+        if (profileChartInstance) profileChartInstance.destroy(); const ctx = document.getElementById('profileChart').getContext('2d');
+        profileChartInstance = new Chart(ctx, { type: 'radar', data: data, options: { elements: { line: { borderWidth: 2 } }, scales: { r: { angleLines: { color: 'rgba(123,139,170,0.2)' }, grid: { color: 'rgba(123,139,170,0.2)' }, pointLabels: { color: '#e8edf5', font: { family: 'Space Grotesk', size: 12 } }, ticks: { backdropColor: 'transparent', color: '#7b8baa', stepSize: 25 }, suggestedMin: 0, suggestedMax: 100 } } } });
+    }
+
+    // ==========================================
+    // JUEGO INTERACTIVO: RASTREADOR SIMÉTRICO
+    // ==========================================
+    let practiceState = { sequence: [], userSequence: [], level: 1, maxLevels: 3, canClick: false };
+
+    function openPracticeGame() {
+        practiceState.level = 1; practiceState.sequence = []; practiceState.userSequence = []; practiceState.canClick = false;
+        document.getElementById('practiceLevel').innerText = `1 / ${practiceState.maxLevels}`;
+        document.getElementById('practiceStatus').innerText = "¡Listo!"; document.getElementById('practiceStatus').style.color = "var(--primary)";
+        document.getElementById('btnStartPracticeSequence').style.display = "inline-flex";
+
+        const board = document.getElementById('practiceGridBoard'); board.innerHTML = '';
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell text-xl font-bold select-none'; cell.dataset.index = i; cell.innerText = i + 1;
+            cell.onclick = () => handlePracticeCellClick(i, cell); board.appendChild(cell);
         }
+        const modal = document.getElementById('gamePracticeModal'); modal.style.display = 'flex'; modal.classList.remove('hidden');
+    }
 
-        function handleSeqIntrusoAction() {
-            if (seqState.hasClicked) return;
-            seqState.hasClicked = true;
+    function closePracticeGame() { const modal = document.getElementById('gamePracticeModal'); modal.style.display = 'none'; modal.classList.add('hidden'); }
 
-            const reactionTime = Math.round(performance.now() - seqState.numberStartTime);
+    function startPracticeSequence() {
+        document.getElementById('btnStartPracticeSequence').style.display = "none";
+        document.getElementById('practiceStatus').innerText = "Observa..."; document.getElementById('practiceStatus').style.color = "var(--accent)";
+        practiceState.userSequence = []; practiceState.canClick = false; practiceState.sequence = [];
+        
+        const totalPasos = practiceState.level + 2;
+        for (let i = 0; i < totalPasos; i++) { practiceState.sequence.push(Math.floor(Math.random() * 9)); }
 
-            if (seqState.isTarget) {
-                // Acierto
-                seqState.aciertos++;
-                seqState.reactionTimes.push(reactionTime);
-                triggerVisualFlash('green');
-            } else {
-                // Falsa Alarma
-                seqState.falsasAlarmas++;
-                triggerVisualFlash('red');
+        let index = 0;
+        const interval = setInterval(() => {
+            const cells = document.querySelectorAll('#practiceGridBoard .grid-cell');
+            const targetCell = cells[practiceState.sequence[index]];
+
+            targetCell.style.background = 'var(--purple)'; targetCell.style.color = '#fff';
+            targetCell.style.boxShadow = '0 0 15px var(--purple-glow)';
+
+            setTimeout(() => { targetCell.style.background = ''; targetCell.style.color = ''; targetCell.style.boxShadow = ''; }, 600);
+            index++;
+            if (index >= practiceState.sequence.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    practiceState.canClick = true; document.getElementById('practiceStatus').innerText = "¡Tu turno!";
+                    document.getElementById('practiceStatus').style.color = "var(--success)";
+                }, 700);
             }
+        }, 1000);
+    }
 
-            updateSeqScoreboard();
-        }
+    function handlePracticeCellClick(clickedIndex, cellElement) {
+        if (!practiceState.canClick) return;
+        practiceState.userSequence.push(clickedIndex);
+        const currentCheckIdx = practiceState.userSequence.length - 1;
 
-        function triggerVisualFlash(type) {
-            const card = document.getElementById('seqNumberCard');
-            // Reset de animación CSS
-            card.classList.remove('flash-green', 'flash-red');
-            void card.offsetWidth; // Forzar reflow
-            if (type === 'green') {
-                card.classList.add('flash-green');
-            } else {
-                card.classList.add('flash-red');
-            }
-
+        if (practiceState.userSequence[currentCheckIdx] !== practiceState.sequence[currentCheckIdx]) {
+            practiceState.canClick = false; cellElement.classList.add('wrong');
+            document.getElementById('practiceStatus').innerText = "Incorrecto"; document.getElementById('practiceStatus').style.color = "var(--error)";
             setTimeout(() => {
-                card.classList.remove('flash-green', 'flash-red');
-            }, 350);
+                cellElement.classList.remove('wrong'); showToast("El patrón no coincide. ¡Inténtalo de nuevo!");
+                document.getElementById('btnStartPracticeSequence').style.display = "inline-flex";
+                document.getElementById('btnStartPracticeSequence').innerHTML = `<i class="fa-solid fa-rotate-left"></i> Repetir Nivel`;
+            }, 600);
+            return;
         }
 
-        function updateSeqScoreboard() {
-            document.getElementById('seqAciertos').textContent = seqState.aciertos;
-            document.getElementById('seqFA').textContent = seqState.falsasAlarmas;
-            document.getElementById('seqOmisiones').textContent = seqState.omisiones;
-        }
+        cellElement.style.background = 'var(--primary-glow)'; setTimeout(() => { cellElement.style.background = ''; }, 200);
 
-        function stopSeqGame() {
-            clearInterval(seqState.timerInterval);
-            clearTimeout(seqState.stepTimeout);
-        }
-
-        function closeSeqGame() {
-            stopSeqGame();
-            showDashboard();
-        }
-
-        async function finishSeqGame() {
-            stopSeqGame();
-            document.getElementById('btnSeqIntruso').disabled = true;
-
-            // Verificar si el último elemento expuesto fue omitido
-            if (seqState.isTarget && !seqState.hasClicked) {
-                seqState.omisiones++;
-                updateSeqScoreboard();
-            }
-
-            let avgRT = 0;
-            let sdRT = 0;
-
-            if (seqState.reactionTimes.length > 0) {
-                const sum = seqState.reactionTimes.reduce((a, b) => a + b, 0);
-                avgRT = Math.round(sum / seqState.reactionTimes.length);
-                const variance = seqState.reactionTimes.reduce((a, b) => a + Math.pow(b - avgRT, 2), 0) / seqState.reactionTimes.length;
-                sdRT = Math.round(Math.sqrt(variance));
-            }
-
-            const res = {
-                categoria: "Funciones Ejecutivas",
-                subcategoria: "Atención Sostenida - Doble/Mitad",
-                nombre: state.user.nombre,
-                edad: state.user.edad,
-                curso: state.user.curso,
-                metricas: {
-                    aciertos: seqState.aciertos,
-                    falsasAlarmas: seqState.falsasAlarmas,
-                    omisiones: seqState.omisiones,
-                    promedioTR_ms: avgRT,
-                    desviacionEstandarTR_ms: sdRT
-                },
-                fecha: new Date().toISOString()
-            };
-
-            try {
-                await db.collection("resultados").add(res);
-                showToast("Prueba de Secuencia Doble/Mitad guardada con éxito.");
-            } catch (e) {
-                console.error("Error al guardar en Firebase:", e);
-                showToast("Error al guardar el resultado.");
-            }
-
-            closeSeqGame();
-        }
-
-
-        // --- 5. LECTURA DE RESULTADOS Y PANEL ADMIN UNIFICADO ---
-        async function fetchResults() {
-            const tbody = document.getElementById('tableAdminBody');
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-slate-400">Cargando datos...</td></tr>`;
-
-            try {
-                const snapshot = await db.collection("resultados")
-                    .where("categoria", "==", "Funciones Ejecutivas")
-                    .get();
-
-                tbody.innerHTML = '';
-                if (snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-slate-500">No hay registros guardados aún.</td></tr>`;
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const m = data.metricas || {};
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-800/50 transition border-b border-slate-700/50";
-                    tr.innerHTML = `
-                        <td class="p-3 font-semibold text-slate-200">${data.nombre || 'Anónimo'}</td>
-                        <td class="p-3 text-slate-400">${data.curso || 'N/A'}</td>
-                        <td class="p-3 text-xs"><span class="bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700/50">${data.subcategoria || 'Atención Sostenida'}</span></td>
-                        <td class="p-3 text-center text-emerald-400 font-bold">${m.aciertos ?? 0}</td>
-                        <td class="p-3 text-center text-rose-400 font-bold">${m.falsasAlarmas ?? 0}</td>
-                        <td class="p-3 text-center text-amber-400 font-bold">${m.omisiones ?? 0}</td>
-                        <td class="p-3 text-center text-slate-200">${m.promedioTR_ms ?? 0} ms</td>
-                        <td class="p-3 text-center text-indigo-300 font-mono">±${m.desviacionEstandarTR_ms ?? 0} ms</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (e) {
-                console.error("Error consultando Firestore:", e);
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-rose-400">Error al cargar datos. Verifique la configuración de Firebase.</td></tr>`;
+        if (practiceState.userSequence.length === practiceState.sequence.length) {
+            practiceState.canClick = false;
+            if (practiceState.level < practiceState.maxLevels) {
+                document.getElementById('practiceStatus').innerText = "¡Nivel Superado!"; document.getElementById('practiceStatus').style.color = "var(--success)";
+                setTimeout(() => {
+                    practiceState.level++; document.getElementById('practiceLevel').innerText = `${practiceState.level} / ${practiceState.maxLevels}`;
+                    document.getElementById('btnStartPracticeSequence').style.display = "inline-flex";
+                    document.getElementById('btnStartPracticeSequence').innerHTML = `<i class="fa-solid fa-arrow-right"></i> Ir al Nivel ${practiceState.level}`;
+                }, 1000);
+            } else {
+                document.getElementById('practiceStatus').innerText = "💥 ¡COMPLETADO! 💥"; document.getElementById('practiceStatus').style.color = "var(--accent)";
+                setTimeout(() => { alert("¡Excelente trabajo! Has entrenado tu atención sostenida de forma exitosa hoy."); closePracticeGame(); }, 1200);
             }
         }
-    </script>
+    }
+</script>
 </body>
 </html>
