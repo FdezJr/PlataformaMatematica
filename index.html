@@ -18,7 +18,7 @@
             transform: scale(0.92);
         }
         
-        /* Flash visual overlay/borders */
+        /* Animaciones para el destello visual de respuesta */
         @keyframes flash-green-anim {
             0% { background-color: rgba(16, 185, 129, 0.4); border-color: #10b981; }
             100% { background-color: rgba(30, 41, 59, 1); border-color: rgba(51, 65, 85, 1); }
@@ -85,7 +85,7 @@
             </div>
 
             <div class="grid md:grid-cols-2 gap-6">
-                <!-- Card 1: Filtro Numérico Veloz (Intruso Grid) -->
+                <!-- Card 1: Filtro Numérico Veloz (Grid) -->
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-3">
@@ -99,7 +99,7 @@
                     </button>
                 </div>
 
-                <!-- Card 2: Secuencia Doble / Mitad (NUEVA ACTIVIDAD) -->
+                <!-- Card 2: Secuencia Doble / Mitad -->
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-3">
@@ -159,7 +159,7 @@
             </div>
         </section>
 
-        <!-- 4. SECCIÓN JUEGO 2: SECUENCIA DOBLE / MITAD (NUEVA ACTIVIDAD) -->
+        <!-- 4. SECCIÓN JUEGO 2: SECUENCIA DOBLE / MITAD -->
         <section id="secSeqGame" class="hidden-section space-y-4">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
                 <div>
@@ -188,7 +188,7 @@
             <!-- Regla e Instrucción -->
             <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-center">
                 <p class="text-sm text-slate-300">
-                    <span class="font-bold text-amber-400">Regla:</span> Presiona <span class="text-emerald-400 font-bold">¡INTRUSO!</span> únicamente si el número mostrado es exactamente el <span class="underline decoration-indigo-400">DOBLE</span> o la <span class="underline decoration-indigo-400">MITAD</span> del número justo anterior.
+                    <span class="font-bold text-amber-400">Regla:</span> Presiona <span class="text-emerald-400 font-bold">¡INTRUSO!</span> únicamente si el número mostrado es exactamente el <span class="underline decoration-indigo-400 font-bold">DOBLE</span> o la <span class="underline decoration-indigo-400 font-bold">MITAD</span> del número justo anterior.
                 </p>
             </div>
 
@@ -312,7 +312,7 @@
         let intrusoState = {
             timerInterval: null,
             roundInterval: null,
-            timeRemaining: 180, // 3 Minutos
+            timeRemaining: 180,
             aciertos: 0,
             falsasAlarmas: 0,
             omisiones: 0,
@@ -500,7 +500,7 @@
         let seqState = {
             timerInterval: null,
             stepTimeout: null,
-            timeRemaining: 180, // 3 Minutos en segundos
+            timeRemaining: 180, // 3 Minutos
             aciertos: 0,
             falsasAlarmas: 0,
             omisiones: 0,
@@ -510,7 +510,7 @@
             isTarget: false,
             hasClicked: false,
             numberStartTime: 0,
-            intervalMs: 1800 // Tiempo que dura cada número en pantalla (1.8 seg)
+            intervalMs: 1800 // Ritmo de cambio de número (1.8s)
         };
 
         function startSeqGameUI() {
@@ -548,7 +548,7 @@
         }
 
         function nextSeqStep() {
-            // Si el paso anterior era un objetivo y el alumno no hizo click -> Omisión
+            // Si el número anterior era objetivo y no se hizo clic -> Registra Omisión
             if (seqState.isTarget && !seqState.hasClicked) {
                 seqState.omisiones++;
                 updateSeqScoreboard();
@@ -556,18 +556,17 @@
 
             seqState.hasClicked = false;
 
-            // Generar nuevo número en función del anterior
+            // Generación de secuencia
             if (seqState.previousNumber === null) {
                 // Primer número aleatorio entre 10 y 50
                 seqState.currentNumber = Math.floor(Math.random() * 41) + 10;
                 seqState.isTarget = false;
             } else {
-                // Decidir si este paso será Target (~30% prob si es válido)
+                // Decidir si este paso será Doble/Mitad (~30% prob)
                 const forceTarget = Math.random() < 0.30;
+                const prev = seqState.previousNumber;
                 
                 if (forceTarget) {
-                    // Generar objetivo (Doble o Mitad)
-                    const prev = seqState.previousNumber;
                     const canBeHalf = (prev % 2 === 0) && (prev / 2 >= 2);
                     const canBeDouble = (prev * 2 <= 100);
 
@@ -581,25 +580,23 @@
                         seqState.currentNumber = prev * 2;
                         seqState.isTarget = true;
                     } else {
-                        // Si no puede ser ni doble ni mitad dentro de rango, generar distractor
                         seqState.currentNumber = generateDistractor(prev);
                         seqState.isTarget = false;
                     }
                 } else {
-                    // Generar Distractor
-                    seqState.currentNumber = generateDistractor(seqState.previousNumber);
+                    seqState.currentNumber = generateDistractor(prev);
                     seqState.isTarget = false;
                 }
             }
 
-            // Mostrar número en pantalla
+            // Renderizar número central
             document.getElementById('seqNumberDisplay').textContent = seqState.currentNumber;
             seqState.numberStartTime = performance.now();
 
-            // Guardar número actual como previo para el siguiente ciclo
+            // Actualizar referencia anterior
             seqState.previousNumber = seqState.currentNumber;
 
-            // Programar siguiente paso
+            // Programar el siguiente número
             clearTimeout(seqState.stepTimeout);
             seqState.stepTimeout = setTimeout(() => {
                 if (seqState.timeRemaining > 0) {
@@ -611,17 +608,16 @@
         function generateDistractor(prev) {
             let num;
             do {
-                num = Math.floor(Math.random() * 80) + 4; // Rango 4 a 84
+                num = Math.floor(Math.random() * 80) + 4;
             } while (num === prev || num === prev * 2 || (prev % 2 === 0 && num === prev / 2));
             return num;
         }
 
         function handleSeqIntrusoAction() {
-            if (seqState.hasClicked) return; // Un solo click por número
+            if (seqState.hasClicked) return;
             seqState.hasClicked = true;
 
             const reactionTime = Math.round(performance.now() - seqState.numberStartTime);
-            const card = document.getElementById('seqNumberCard');
 
             if (seqState.isTarget) {
                 // Acierto
@@ -629,7 +625,7 @@
                 seqState.reactionTimes.push(reactionTime);
                 triggerVisualFlash('green');
             } else {
-                // Falsa alarma
+                // Falsa Alarma
                 seqState.falsasAlarmas++;
                 triggerVisualFlash('red');
             }
@@ -639,10 +635,9 @@
 
         function triggerVisualFlash(type) {
             const card = document.getElementById('seqNumberCard');
-            // Remover clases previas para reiniciar la animación CSS
+            // Reset de animación CSS
             card.classList.remove('flash-green', 'flash-red');
-            // Forzar reflow
-            void card.offsetWidth;
+            void card.offsetWidth; // Forzar reflow
             if (type === 'green') {
                 card.classList.add('flash-green');
             } else {
@@ -674,7 +669,7 @@
             stopSeqGame();
             document.getElementById('btnSeqIntruso').disabled = true;
 
-            // Evaluar último elemento si era objetivo no clickeado
+            // Verificar si el último elemento expuesto fue omitido
             if (seqState.isTarget && !seqState.hasClicked) {
                 seqState.omisiones++;
                 updateSeqScoreboard();
