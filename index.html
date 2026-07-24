@@ -11,16 +11,31 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         .hidden-section { display: none; }
-        .grid-cell {
-            transition: background-color 0.2s ease, transform 0.1s ease;
+        .grid-number-btn {
+            transition: all 0.15s ease-in-out;
         }
-        .grid-cell.active-highlight {
-            background-color: #6366f1 !important; /* Indigo-500 */
-            transform: scale(0.95);
+        .grid-number-btn:active {
+            transform: scale(0.92);
+        }
+        
+        /* Flash visual overlay/borders */
+        @keyframes flash-green-anim {
+            0% { background-color: rgba(16, 185, 129, 0.4); border-color: #10b981; }
+            100% { background-color: rgba(30, 41, 59, 1); border-color: rgba(51, 65, 85, 1); }
+        }
+        @keyframes flash-red-anim {
+            0% { background-color: rgba(244, 63, 94, 0.4); border-color: #f43f5e; }
+            100% { background-color: rgba(30, 41, 59, 1); border-color: rgba(51, 65, 85, 1); }
+        }
+        .flash-green {
+            animation: flash-green-anim 0.35s ease-out;
+        }
+        .flash-red {
+            animation: flash-red-anim 0.35s ease-out;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
 
     <!-- Header / Navbar -->
     <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex justify-between items-center">
@@ -31,7 +46,7 @@
     </header>
 
     <!-- Main Content Container -->
-    <main class="flex-1 container mx-auto p-4 md:p-6 max-w-4xl">
+    <main class="flex-1 container mx-auto p-4 md:p-6 max-w-4xl flex flex-col justify-center">
 
         <!-- 1. REGISTRO DE USUARIO -->
         <section id="secRegister" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg my-auto">
@@ -69,38 +84,38 @@
                 </button>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-4">
-                <!-- Card 1: Filtro Numérico Veloz (IntrusoGame) -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Card 1: Filtro Numérico Veloz (Intruso Grid) -->
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-lg font-bold text-indigo-300">Filtro Numérico Veloz</h3>
-                            <span class="bg-indigo-900/50 text-indigo-300 text-xs px-2.5 py-1 rounded border border-indigo-700">Atención Sostenida</span>
+                            <h3 class="text-lg font-bold text-indigo-300">Atención Sostenida: Filtro Grid</h3>
+                            <span class="bg-indigo-900/50 text-indigo-300 text-xs px-2.5 py-1 rounded border border-indigo-700">3 Minutos</span>
                         </div>
-                        <p class="text-sm text-slate-400 mb-4">Identifica patrones numéricos y reacciona ante los números intrusos en un tiempo límite de 3 minutos.</p>
+                        <p class="text-sm text-slate-400 mb-4">Identifica rápidamente los números que no pertenecen al patrón de pares e impares en una matriz dinámica.</p>
                     </div>
                     <button onclick="startIntrusoGameUI()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition shadow">
-                        Comenzar Test Intruso
+                        Comenzar Test Grid
                     </button>
                 </div>
 
-                <!-- Card 2: Rastreador de Secuencias Simétricas -->
+                <!-- Card 2: Secuencia Doble / Mitad (NUEVA ACTIVIDAD) -->
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-3">
-                            <h3 class="text-lg font-bold text-emerald-300">Secuencias Simétricas</h3>
-                            <span class="bg-emerald-900/50 text-emerald-300 text-xs px-2.5 py-1 rounded border border-emerald-700">Memoria Visuoespacial</span>
+                            <h3 class="text-lg font-bold text-indigo-300">Atención Sostenida: Doble / Mitad</h3>
+                            <span class="bg-indigo-900/50 text-indigo-300 text-xs px-2.5 py-1 rounded border border-indigo-700">3 Minutos</span>
                         </div>
-                        <p class="text-sm text-slate-400 mb-4">Observa la secuencia iluminada en la cuadrícula y reprodúcela en el orden exacto. La complejidad aumenta progresivamente.</p>
+                        <p class="text-sm text-slate-400 mb-4">Observa la secuencia de números centrales. Presiona ¡INTRUSO! inmediatamente si el número es exactamente el doble o la mitad del anterior.</p>
                     </div>
-                    <button onclick="startSymmetryGameUI()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition shadow">
-                        Comenzar Test Secuencias
+                    <button onclick="startSeqGameUI()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition shadow">
+                        Comenzar Test Secuencia
                     </button>
                 </div>
             </div>
         </section>
 
-        <!-- 3. SECCIÓN JUEGO 1: INTRUSO GAME -->
+        <!-- 3. SECCIÓN JUEGO 1: INTRUSO GRID GAME -->
         <section id="secIntrusoGame" class="hidden-section space-y-4">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
                 <div>
@@ -113,7 +128,7 @@
                         <span id="intrusoAciertos" class="text-xl font-bold text-emerald-400">0</span>
                     </div>
                     <div>
-                        <span class="text-xs uppercase text-slate-400 block">F. Alarmas</span>
+                        <span class="text-xs uppercase text-slate-400 block">Falsas Alarmas</span>
                         <span id="intrusoFA" class="text-xl font-bold text-rose-400">0</span>
                     </div>
                     <div>
@@ -126,63 +141,96 @@
                 </button>
             </div>
 
+            <!-- Panel del Patrón Vigente -->
             <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-center">
                 <span class="text-sm text-slate-400 block mb-1">Regla Activa:</span>
                 <span id="intrusoRuleDisplay" class="text-lg font-bold text-indigo-300">Cargando regla...</span>
             </div>
 
-            <div id="intrusoGrid" class="grid grid-cols-3 md:grid-cols-4 gap-3 bg-slate-800 p-4 rounded-xl border border-slate-700"></div>
+            <!-- Matriz Numérica Dynamic Grid -->
+            <div id="intrusoGrid" class="grid grid-cols-3 md:grid-cols-4 gap-3 bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <!-- Se poblará dinámicamente -->
+            </div>
 
             <div class="flex justify-center">
                 <button id="btnIntrusoTrigger" onclick="handleIntrusoAction()" class="w-full max-w-xs bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl shadow-lg text-lg tracking-wide transition transform active:scale-95">
-                    ¡INTRUSO DETECTADO!
+                    ¡DETECTADO!
                 </button>
             </div>
         </section>
 
-        <!-- 4. SECCIÓN JUEGO 2: RASTREADOR DE SECUENCIAS SIMÉTRICAS -->
-        <section id="secSymmetryGame" class="hidden-section space-y-4">
+        <!-- 4. SECCIÓN JUEGO 2: SECUENCIA DOBLE / MITAD (NUEVA ACTIVIDAD) -->
+        <section id="secSeqGame" class="hidden-section space-y-4">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
                 <div>
-                    <span class="text-xs uppercase text-slate-400 block font-semibold">Nivel / Span</span>
-                    <span id="symmetryLevelDisplay" class="text-2xl font-bold text-emerald-400">Nivel 3</span>
+                    <span class="text-xs uppercase text-slate-400 block font-semibold">Tiempo Restante</span>
+                    <span id="seqTimer" class="text-2xl font-mono font-bold text-amber-400">03:00</span>
                 </div>
-                <div class="text-center">
-                    <span id="symmetryStatusText" class="text-sm font-semibold text-slate-300">Observa la secuencia...</span>
+                <div class="flex gap-4 text-center">
+                    <div>
+                        <span class="text-xs uppercase text-slate-400 block">Aciertos</span>
+                        <span id="seqAciertos" class="text-xl font-bold text-emerald-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase text-slate-400 block">Falsas Alarmas</span>
+                        <span id="seqFA" class="text-xl font-bold text-rose-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs uppercase text-slate-400 block">Omisiones</span>
+                        <span id="seqOmisiones" class="text-xl font-bold text-amber-400">0</span>
+                    </div>
                 </div>
-                <button onclick="closeSymmetryGame()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 px-3 py-1.5 rounded transition">
+                <button onclick="closeSeqGame()" class="bg-slate-700 hover:bg-slate-600 text-xs text-slate-300 px-3 py-1.5 rounded transition">
                     Salir
                 </button>
             </div>
 
-            <!-- Cuadrícula 4x4 (16 celdas) -->
-            <div id="symmetryGrid" class="grid grid-cols-4 gap-3 bg-slate-800 p-6 rounded-xl border border-slate-700 max-w-md mx-auto aspect-square">
-                <!-- Se genera dinámicamente -->
+            <!-- Regla e Instrucción -->
+            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-center">
+                <p class="text-sm text-slate-300">
+                    <span class="font-bold text-amber-400">Regla:</span> Presiona <span class="text-emerald-400 font-bold">¡INTRUSO!</span> únicamente si el número mostrado es exactamente el <span class="underline decoration-indigo-400">DOBLE</span> o la <span class="underline decoration-indigo-400">MITAD</span> del número justo anterior.
+                </p>
+            </div>
+
+            <!-- Contenedor del Número Central (con efecto destello visual) -->
+            <div id="seqNumberCard" class="bg-slate-800 border-2 border-slate-700 rounded-2xl p-12 text-center shadow-2xl min-h-[220px] flex flex-col justify-center items-center transition-all duration-200">
+                <span class="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">Número Actual</span>
+                <span id="seqNumberDisplay" class="text-7xl md:text-8xl font-black text-indigo-400 tracking-tight font-mono">--</span>
+            </div>
+
+            <!-- Botón Intruso -->
+            <div class="flex justify-center pt-2">
+                <button id="btnSeqIntruso" onclick="handleSeqIntrusoAction()" class="w-full max-w-sm bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-extrabold py-4 px-6 rounded-xl shadow-xl text-xl tracking-wider transition transform active:scale-95 border-2 border-rose-400/30">
+                    ¡INTRUSO!
+                </button>
             </div>
         </section>
 
         <!-- 5. PANEL DE ADMINISTRACIÓN Y RESULTADOS -->
         <section id="secAdminPanel" class="hidden-section space-y-6">
             <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <h2 class="text-xl font-bold text-indigo-300">Panel de Resultados Guardados</h2>
+                <h2 class="text-xl font-bold text-indigo-300">Panel de Resultados y Métricas</h2>
                 <button onclick="showDashboard()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm px-4 py-2 rounded-lg transition">
                     Volver al Inicio
                 </button>
             </div>
 
             <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-x-auto shadow-md">
-                <table class="w-full text-left text-sm text-slate-300">
+                <table id="tableIntrusoAtt" class="w-full text-left text-sm text-slate-300">
                     <thead class="bg-slate-900 text-xs uppercase text-slate-400 border-b border-slate-700">
                         <tr>
                             <th class="p-3">Estudiante</th>
-                            <th class="p-3">Prueba</th>
-                            <th class="p-3 text-center">Detalle / Nivel Max</th>
+                            <th class="p-3">Curso</th>
+                            <th class="p-3">Actividad</th>
+                            <th class="p-3 text-center">Aciertos</th>
+                            <th class="p-3 text-center">Falsas Alarmas</th>
+                            <th class="p-3 text-center">Omisiones</th>
                             <th class="p-3 text-center">TR Medio (ms)</th>
                             <th class="p-3 text-center">SD (Estabilidad)</th>
                         </tr>
                     </thead>
                     <tbody id="tableAdminBody" class="divide-y divide-slate-700">
-                        <!-- Carga dinámica -->
+                        <!-- Se llena con Firestore -->
                     </tbody>
                 </table>
             </div>
@@ -191,7 +239,7 @@
     </main>
 
     <!-- Global Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-lg shadow-xl hidden transition-all">
+    <div id="toast" class="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-3 rounded-lg shadow-xl hidden transition-all z-50">
         <span id="toastMsg">Notificación</span>
     </div>
 
@@ -210,9 +258,13 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- 2. ESTADO GLOBAL ---
+        // --- 2. ESTADO GLOBAL Y LÓGICA DE USUARIO ---
         const state = {
-            user: { nombre: '', edad: '', curso: '' }
+            user: {
+                nombre: '',
+                edad: '',
+                curso: ''
+            }
         };
 
         document.getElementById('formRegister').addEventListener('submit', (e) => {
@@ -232,7 +284,7 @@
             document.getElementById('secRegister').classList.add('hidden-section');
             document.getElementById('secDashboard').classList.add('hidden-section');
             document.getElementById('secIntrusoGame').classList.add('hidden-section');
-            document.getElementById('secSymmetryGame').classList.add('hidden-section');
+            document.getElementById('secSeqGame').classList.add('hidden-section');
             document.getElementById('secAdminPanel').classList.add('hidden-section');
         }
 
@@ -251,14 +303,16 @@
             const toast = document.getElementById('toast');
             document.getElementById('toastMsg').textContent = msg;
             toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
         }
 
-        // --- 3. JUEGO 1: FILTRO NUMÉRICO VELOZ (INTRUSO) ---
+        // --- 3. MOTOR DEL JUEGO 1: FILTRO NUMÉRICO VELOZ (GRID) ---
         let intrusoState = {
             timerInterval: null,
             roundInterval: null,
-            timeRemaining: 180,
+            timeRemaining: 180, // 3 Minutos
             aciertos: 0,
             falsasAlarmas: 0,
             omisiones: 0,
@@ -290,7 +344,9 @@
                 document.getElementById('intrusoTimer').textContent = 
                     `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 
-                if (intrusoState.timeRemaining <= 0) finishIntrusoGame();
+                if (intrusoState.timeRemaining <= 0) {
+                    finishIntrusoGame();
+                }
             }, 1000);
 
             nextIntrusoRound();
@@ -303,39 +359,59 @@
             }
 
             intrusoState.intrusoClicked = false;
+            
             intrusoState.ruleType = Math.random() > 0.5 ? 'PAR' : 'IMPAR';
             document.getElementById('intrusoRuleDisplay').textContent = 
-                intrusoState.ruleType === 'PAR' ? "Presiona si hay un IMPAR (Intruso)" : "Presiona si hay un PAR (Intruso)";
+                intrusoState.ruleType === 'PAR' ? "Selecciona cuando aparezca un IMPAR (El Intruso)" : "Selecciona cuando aparezca un PAR (El Intruso)";
 
             intrusoState.hasIntruso = Math.random() < 0.4;
+            
             generateGridNumbers();
-            renderIntrusoGrid();
+            renderGrid();
             
             intrusoState.roundStartTime = performance.now();
 
             clearTimeout(intrusoState.roundInterval);
             intrusoState.roundInterval = setTimeout(() => {
-                if (intrusoState.timeRemaining > 0) nextIntrusoRound();
+                if (intrusoState.timeRemaining > 0) {
+                    nextIntrusoRound();
+                }
             }, 2500);
         }
 
         function generateGridNumbers() {
             intrusoState.currentNumbers = [];
+            const count = 8;
             let intrusoPlaced = false;
-            for (let i = 0; i < 8; i++) {
-                let isIntrusoCell = intrusoState.hasIntruso && !intrusoPlaced && (i === 7 || Math.random() < 0.3);
+
+            for (let i = 0; i < count; i++) {
                 let num;
+                let isIntrusoCell = intrusoState.hasIntruso && !intrusoPlaced && (i === count - 1 || Math.random() < 0.3);
+
                 if (isIntrusoCell) {
-                    num = intrusoState.ruleType === 'PAR' ? Math.floor(Math.random()*45)*2+1 : Math.floor(Math.random()*45)*2+2;
+                    num = intrusoState.ruleType === 'PAR' ? getRandomOdd() : getRandomEven();
                     intrusoPlaced = true;
                 } else {
-                    num = intrusoState.ruleType === 'PAR' ? Math.floor(Math.random()*45)*2+2 : Math.floor(Math.random()*45)*2+1;
+                    num = intrusoState.ruleType === 'PAR' ? getRandomEven() : getRandomOdd();
                 }
                 intrusoState.currentNumbers.push(num);
             }
+
+            if (intrusoState.hasIntruso && !intrusoPlaced) {
+                const randomIndex = Math.floor(Math.random() * count);
+                intrusoState.currentNumbers[randomIndex] = intrusoState.ruleType === 'PAR' ? getRandomOdd() : getRandomEven();
+            }
         }
 
-        function renderIntrusoGrid() {
+        function getRandomEven() {
+            return Math.floor(Math.random() * 45) * 2 + 2;
+        }
+
+        function getRandomOdd() {
+            return Math.floor(Math.random() * 45) * 2 + 1;
+        }
+
+        function renderGrid() {
             const grid = document.getElementById('intrusoGrid');
             grid.innerHTML = '';
             intrusoState.currentNumbers.forEach((num) => {
@@ -358,6 +434,7 @@
             } else {
                 intrusoState.falsasAlarmas++;
             }
+
             updateIntrusoScoreboard();
         }
 
@@ -381,7 +458,9 @@
             stopIntrusoGame();
             document.getElementById('btnIntrusoTrigger').disabled = true;
 
-            let avgRT = 0, sdRT = 0;
+            let avgRT = 0;
+            let sdRT = 0;
+            
             if (intrusoState.reactionTimes.length > 0) {
                 const sum = intrusoState.reactionTimes.reduce((a, b) => a + b, 0);
                 avgRT = Math.round(sum / intrusoState.reactionTimes.length);
@@ -407,131 +486,220 @@
 
             try {
                 await db.collection("resultados").add(res);
-                showToast("Resultado de Filtro Intruso guardado.");
+                showToast("Prueba de Filtro Grid completada y guardada.");
             } catch (e) {
-                console.error(e);
+                console.error("Error al guardar en Firebase:", e);
+                showToast("Error al guardar el resultado.");
             }
+
             closeIntrusoGame();
         }
 
-        // --- 4. JUEGO 2: RASTREADOR DE SECUENCIAS SIMÉTRICAS ---
-        let symmetryState = {
-            level: 3, // Longitud de secuencia inicial
-            sequence: [],
-            userSequence: [],
-            isPlayback: false,
+
+        // --- 4. MOTOR DEL JUEGO 2: SECUENCIA DOBLE / MITAD (NUEVA ACTIVIDAD) ---
+        let seqState = {
+            timerInterval: null,
+            stepTimeout: null,
+            timeRemaining: 180, // 3 Minutos en segundos
+            aciertos: 0,
+            falsasAlarmas: 0,
+            omisiones: 0,
             reactionTimes: [],
-            lastClickTime: 0
+            previousNumber: null,
+            currentNumber: null,
+            isTarget: false,
+            hasClicked: false,
+            numberStartTime: 0,
+            intervalMs: 1800 // Tiempo que dura cada número en pantalla (1.8 seg)
         };
 
-        function startSymmetryGameUI() {
+        function startSeqGameUI() {
             hideAllSections();
-            document.getElementById('secSymmetryGame').classList.remove('hidden-section');
-            symmetryState.level = 3;
-            symmetryState.reactionTimes = [];
-            renderSymmetryBoard();
-            startSymmetryRound();
+            document.getElementById('secSeqGame').classList.remove('hidden-section');
+            document.getElementById('btnSeqIntruso').disabled = false;
+
+            // Reiniciar estado
+            seqState.timeRemaining = 180;
+            seqState.aciertos = 0;
+            seqState.falsasAlarmas = 0;
+            seqState.omisiones = 0;
+            seqState.reactionTimes = [];
+            seqState.previousNumber = null;
+            seqState.currentNumber = null;
+            seqState.isTarget = false;
+            seqState.hasClicked = false;
+
+            updateSeqScoreboard();
+
+            // Reloj Principal (3 min)
+            seqState.timerInterval = setInterval(() => {
+                seqState.timeRemaining--;
+                let min = Math.floor(seqState.timeRemaining / 60);
+                let sec = seqState.timeRemaining % 60;
+                document.getElementById('seqTimer').textContent = 
+                    `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+
+                if (seqState.timeRemaining <= 0) {
+                    finishSeqGame();
+                }
+            }, 1000);
+
+            nextSeqStep();
         }
 
-        function renderSymmetryBoard() {
-            const grid = document.getElementById('symmetryGrid');
-            grid.innerHTML = '';
-            for (let i = 0; i < 16; i++) {
-                const cell = document.createElement('button');
-                cell.className = "grid-cell bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 w-full h-full cursor-pointer";
-                cell.dataset.index = i;
-                cell.onclick = () => handleSymmetryCellClick(i);
-                grid.appendChild(cell);
+        function nextSeqStep() {
+            // Si el paso anterior era un objetivo y el alumno no hizo click -> Omisión
+            if (seqState.isTarget && !seqState.hasClicked) {
+                seqState.omisiones++;
+                updateSeqScoreboard();
             }
+
+            seqState.hasClicked = false;
+
+            // Generar nuevo número en función del anterior
+            if (seqState.previousNumber === null) {
+                // Primer número aleatorio entre 10 y 50
+                seqState.currentNumber = Math.floor(Math.random() * 41) + 10;
+                seqState.isTarget = false;
+            } else {
+                // Decidir si este paso será Target (~30% prob si es válido)
+                const forceTarget = Math.random() < 0.30;
+                
+                if (forceTarget) {
+                    // Generar objetivo (Doble o Mitad)
+                    const prev = seqState.previousNumber;
+                    const canBeHalf = (prev % 2 === 0) && (prev / 2 >= 2);
+                    const canBeDouble = (prev * 2 <= 100);
+
+                    if (canBeHalf && canBeDouble) {
+                        seqState.currentNumber = Math.random() < 0.5 ? prev / 2 : prev * 2;
+                        seqState.isTarget = true;
+                    } else if (canBeHalf) {
+                        seqState.currentNumber = prev / 2;
+                        seqState.isTarget = true;
+                    } else if (canBeDouble) {
+                        seqState.currentNumber = prev * 2;
+                        seqState.isTarget = true;
+                    } else {
+                        // Si no puede ser ni doble ni mitad dentro de rango, generar distractor
+                        seqState.currentNumber = generateDistractor(prev);
+                        seqState.isTarget = false;
+                    }
+                } else {
+                    // Generar Distractor
+                    seqState.currentNumber = generateDistractor(seqState.previousNumber);
+                    seqState.isTarget = false;
+                }
+            }
+
+            // Mostrar número en pantalla
+            document.getElementById('seqNumberDisplay').textContent = seqState.currentNumber;
+            seqState.numberStartTime = performance.now();
+
+            // Guardar número actual como previo para el siguiente ciclo
+            seqState.previousNumber = seqState.currentNumber;
+
+            // Programar siguiente paso
+            clearTimeout(seqState.stepTimeout);
+            seqState.stepTimeout = setTimeout(() => {
+                if (seqState.timeRemaining > 0) {
+                    nextSeqStep();
+                }
+            }, seqState.intervalMs);
         }
 
-        function startSymmetryRound() {
-            symmetryState.userSequence = [];
-            symmetryState.isPlayback = true;
-            document.getElementById('symmetryLevelDisplay').textContent = `Nivel ${symmetryState.level}`;
-            document.getElementById('symmetryStatusText').textContent = "Atención a la secuencia...";
+        function generateDistractor(prev) {
+            let num;
+            do {
+                num = Math.floor(Math.random() * 80) + 4; // Rango 4 a 84
+            } while (num === prev || num === prev * 2 || (prev % 2 === 0 && num === prev / 2));
+            return num;
+        }
 
-            // Generar secuencia aleatoria de celdas
-            symmetryState.sequence = [];
-            for (let i = 0; i < symmetryState.level; i++) {
-                symmetryState.sequence.push(Math.floor(Math.random() * 16));
+        function handleSeqIntrusoAction() {
+            if (seqState.hasClicked) return; // Un solo click por número
+            seqState.hasClicked = true;
+
+            const reactionTime = Math.round(performance.now() - seqState.numberStartTime);
+            const card = document.getElementById('seqNumberCard');
+
+            if (seqState.isTarget) {
+                // Acierto
+                seqState.aciertos++;
+                seqState.reactionTimes.push(reactionTime);
+                triggerVisualFlash('green');
+            } else {
+                // Falsa alarma
+                seqState.falsasAlarmas++;
+                triggerVisualFlash('red');
             }
 
-            // Reproducir secuencia
-            let delay = 600;
-            symmetryState.sequence.forEach((cellIndex, i) => {
-                setTimeout(() => {
-                    highlightCell(cellIndex);
-                }, (i + 1) * delay);
-            });
+            updateSeqScoreboard();
+        }
 
-            // Habilitar entrada de usuario tras terminar reproducción
+        function triggerVisualFlash(type) {
+            const card = document.getElementById('seqNumberCard');
+            // Remover clases previas para reiniciar la animación CSS
+            card.classList.remove('flash-green', 'flash-red');
+            // Forzar reflow
+            void card.offsetWidth;
+            if (type === 'green') {
+                card.classList.add('flash-green');
+            } else {
+                card.classList.add('flash-red');
+            }
+
             setTimeout(() => {
-                symmetryState.isPlayback = false;
-                symmetryState.lastClickTime = performance.now();
-                document.getElementById('symmetryStatusText').textContent = "¡Tu turno! Reproduce el patrón.";
-            }, (symmetryState.sequence.length + 1) * delay);
+                card.classList.remove('flash-green', 'flash-red');
+            }, 350);
         }
 
-        function highlightCell(index) {
-            const cells = document.querySelectorAll('#symmetryGrid .grid-cell');
-            if (cells[index]) {
-                cells[index].classList.add('active-highlight');
-                setTimeout(() => {
-                    cells[index].classList.remove('active-highlight');
-                }, 350);
-            }
+        function updateSeqScoreboard() {
+            document.getElementById('seqAciertos').textContent = seqState.aciertos;
+            document.getElementById('seqFA').textContent = seqState.falsasAlarmas;
+            document.getElementById('seqOmisiones').textContent = seqState.omisiones;
         }
 
-        function handleSymmetryCellClick(index) {
-            if (symmetryState.isPlayback) return;
-
-            const now = performance.now();
-            symmetryState.reactionTimes.push(Math.round(now - symmetryState.lastClickTime));
-            symmetryState.lastClickTime = now;
-
-            highlightCell(index);
-            symmetryState.userSequence.push(index);
-
-            const currentStep = symmetryState.userSequence.length - 1;
-
-            // Comprobar error
-            if (symmetryState.userSequence[currentStep] !== symmetryState.sequence[currentStep]) {
-                document.getElementById('symmetryStatusText').textContent = "¡Secuencia Incorrecta!";
-                showToast(`Juego Terminado. Alcanzaste el Nivel ${symmetryState.level}`);
-                finishSymmetryGame();
-                return;
-            }
-
-            // Comprobar si completó el nivel con éxito
-            if (symmetryState.userSequence.length === symmetryState.sequence.length) {
-                document.getElementById('symmetryStatusText').textContent = "¡Correcto! Avanzando...";
-                symmetryState.level++;
-                setTimeout(startSymmetryRound, 1000);
-            }
+        function stopSeqGame() {
+            clearInterval(seqState.timerInterval);
+            clearTimeout(seqState.stepTimeout);
         }
 
-        function closeSymmetryGame() {
+        function closeSeqGame() {
+            stopSeqGame();
             showDashboard();
         }
 
-        async function finishSymmetryGame() {
-            let avgRT = 0, sdRT = 0;
-            if (symmetryState.reactionTimes.length > 0) {
-                const sum = symmetryState.reactionTimes.reduce((a, b) => a + b, 0);
-                avgRT = Math.round(sum / symmetryState.reactionTimes.length);
-                const variance = symmetryState.reactionTimes.reduce((a, b) => a + Math.pow(b - avgRT, 2), 0) / symmetryState.reactionTimes.length;
+        async function finishSeqGame() {
+            stopSeqGame();
+            document.getElementById('btnSeqIntruso').disabled = true;
+
+            // Evaluar último elemento si era objetivo no clickeado
+            if (seqState.isTarget && !seqState.hasClicked) {
+                seqState.omisiones++;
+                updateSeqScoreboard();
+            }
+
+            let avgRT = 0;
+            let sdRT = 0;
+
+            if (seqState.reactionTimes.length > 0) {
+                const sum = seqState.reactionTimes.reduce((a, b) => a + b, 0);
+                avgRT = Math.round(sum / seqState.reactionTimes.length);
+                const variance = seqState.reactionTimes.reduce((a, b) => a + Math.pow(b - avgRT, 2), 0) / seqState.reactionTimes.length;
                 sdRT = Math.round(Math.sqrt(variance));
             }
 
             const res = {
                 categoria: "Funciones Ejecutivas",
-                subcategoria: "Memoria Visuoespacial - Secuencias Simétricas",
+                subcategoria: "Atención Sostenida - Doble/Mitad",
                 nombre: state.user.nombre,
                 edad: state.user.edad,
                 curso: state.user.curso,
                 metricas: {
-                    maxSpanNivel: symmetryState.level,
+                    aciertos: seqState.aciertos,
+                    falsasAlarmas: seqState.falsasAlarmas,
+                    omisiones: seqState.omisiones,
                     promedioTR_ms: avgRT,
                     desviacionEstandarTR_ms: sdRT
                 },
@@ -540,53 +708,52 @@
 
             try {
                 await db.collection("resultados").add(res);
-                showToast("Resultado de Secuencias Simétricas guardado.");
+                showToast("Prueba de Secuencia Doble/Mitad guardada con éxito.");
             } catch (e) {
-                console.error(e);
+                console.error("Error al guardar en Firebase:", e);
+                showToast("Error al guardar el resultado.");
             }
 
-            setTimeout(closeSymmetryGame, 1500);
+            closeSeqGame();
         }
 
-        // --- 5. CONSULTA PANEL ADMINISTRATIVO UNIFICADO ---
+
+        // --- 5. LECTURA DE RESULTADOS Y PANEL ADMIN UNIFICADO ---
         async function fetchResults() {
             const tbody = document.getElementById('tableAdminBody');
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-slate-400">Cargando datos de Firestore...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-slate-400">Cargando datos...</td></tr>`;
 
             try {
-                const snapshot = await db.collection("resultados").get();
-                tbody.innerHTML = '';
+                const snapshot = await db.collection("resultados")
+                    .where("categoria", "==", "Funciones Ejecutivas")
+                    .get();
 
+                tbody.innerHTML = '';
                 if (snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-slate-500">No hay registros guardados aún.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-slate-500">No hay registros guardados aún.</td></tr>`;
                     return;
                 }
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const m = data.metricas || {};
-                    let detalleText = '';
-
-                    if (data.subcategoria.includes("Filtro Intruso")) {
-                        detalleText = `A: ${m.aciertos ?? 0} | FA: ${m.falsasAlarmas ?? 0} | Om: ${m.omisiones ?? 0}`;
-                    } else {
-                        detalleText = `Span Máximo: Nivel ${m.maxSpanNivel ?? 0}`;
-                    }
-
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-800/50 transition";
+                    tr.className = "hover:bg-slate-800/50 transition border-b border-slate-700/50";
                     tr.innerHTML = `
                         <td class="p-3 font-semibold text-slate-200">${data.nombre || 'Anónimo'}</td>
-                        <td class="p-3 text-indigo-300">${data.subcategoria || 'Evaluación'}</td>
-                        <td class="p-3 text-center text-emerald-400 font-bold">${detalleText}</td>
+                        <td class="p-3 text-slate-400">${data.curso || 'N/A'}</td>
+                        <td class="p-3 text-xs"><span class="bg-indigo-900/60 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700/50">${data.subcategoria || 'Atención Sostenida'}</span></td>
+                        <td class="p-3 text-center text-emerald-400 font-bold">${m.aciertos ?? 0}</td>
+                        <td class="p-3 text-center text-rose-400 font-bold">${m.falsasAlarmas ?? 0}</td>
+                        <td class="p-3 text-center text-amber-400 font-bold">${m.omisiones ?? 0}</td>
                         <td class="p-3 text-center text-slate-200">${m.promedioTR_ms ?? 0} ms</td>
-                        <td class="p-3 text-center text-amber-300">±${m.desviacionEstandarTR_ms ?? 0} ms</td>
+                        <td class="p-3 text-center text-indigo-300 font-mono">±${m.desviacionEstandarTR_ms ?? 0} ms</td>
                     `;
                     tbody.appendChild(tr);
                 });
             } catch (e) {
                 console.error("Error consultando Firestore:", e);
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-rose-400">Error al cargar resultados. Revisa la consola.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-rose-400">Error al cargar datos. Verifique la configuración de Firebase.</td></tr>`;
             }
         }
     </script>
