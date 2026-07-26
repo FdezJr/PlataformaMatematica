@@ -132,6 +132,41 @@
             </div>
         </section>
 
+<!-- RETO: INTRUSO (ATENCIÓN SOSTENIDA) -->
+<section class="screen" id="screenInstrIntruso">
+    <div class="glass-card text-center">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 bg-amber-500/20">
+            <i class="fa-solid fa-user-secret text-xl text-amber-500"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Reto: ¡INTRUSO!</h2>
+        <p class="text-sm mb-6" style="color: var(--text-muted);">Atención Sostenida y Control</p>
+        <div class="text-left space-y-3 mb-8" style="color: var(--text-muted);">
+            <p>1. Verás aparecer números uno tras otro sin detenerse.</p>
+            <p>2. Presiona el botón <strong class="text-amber-500">¡INTRUSO!</strong> <strong>SOLO</strong> si el número que ves es exactamente el <strong>doble</strong> o la <strong>mitad</strong> del número anterior.</p>
+            <p>3. Mantente concentrado, dura un par de minutos.</p>
+        </div>
+        <button class="btn-primary w-full" style="background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245,158,11,0.3);" onclick="startIntruso()">
+            <i class="fa-solid fa-play"></i> Iniciar vigilancia
+        </button>
+    </div>
+</section>
+
+<section class="screen" id="screenPlayIntruso">
+    <div class="glass-card text-center transition-colors duration-200" id="intrusoCard" style="max-width: 450px;">
+        <p class="text-sm mb-6 uppercase tracking-widest" style="color: var(--text-muted);">¿Es el doble o la mitad?</p>
+        
+        <div class="h-32 flex items-center justify-center mb-8">
+            <div class="text-8xl font-black font-mono transition-transform duration-100" id="intrusoNumberDisplay" style="color: var(--text);">
+                --
+            </div>
+        </div>
+
+        <button id="btnIntruso" class="w-full py-6 rounded-2xl text-2xl font-black tracking-widest text-white shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" style="background: var(--error);" onclick="registerIntrusoClick()">
+            ¡INTRUSO!
+        </button>
+    </div>
+</section>
+        
         <!-- RETO 4: INHIBICIÓN -->
         <section class="screen" id="screenInstrInhibition"><div class="glass-card text-center"><div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5" style="background: var(--accent-glow);"><i class="fa-solid fa-hand text-xl" style="color: var(--accent);"></i></div><h2 class="text-2xl font-bold mb-2">Reto 4: Operaciones Selectivas</h2><p class="text-sm mb-6" style="color: var(--text-muted);">Control inhibitorio</p><div class="text-left space-y-3 mb-8" style="color: var(--text-muted);"><p>1. Verás <strong style="color: var(--text);">8 operaciones</strong>.</p><p>2. Escribe el resultado <strong style="color: var(--accent);">SOLO si es MAYOR a 20</strong>.</p><p>3. Deja en blanco las demás.</p></div><button class="btn-accent" onclick="startInhibition()"><i class="fa-solid fa-play"></i> Comenzar</button></div></section>
         <section class="screen" id="screenOperationsInhibition">
