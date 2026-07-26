@@ -1,8 +1,8 @@
 /**
- * Módulo de Inicialización de Firebase (Sintaxis Modular v9+)
+ * Módulo de Inicialización de Firebase (Importación CDN para navegador)
  */
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import firebase from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js";
+import "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js";
 
 const firebaseConfig = { 
     apiKey: "AIzaSyBPvo4UAztPUKREsXaG0dbwKE-nrldlJPk", 
@@ -14,7 +14,8 @@ const firebaseConfig = {
     measurementId: "G-8ZRJM1XBBZ" 
 };
 
-// Reutiliza la app si ya fue inicializada o crea una nueva
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+if (!firebase.apps.length) { 
+    firebase.initializeApp(firebaseConfig); 
+}
 
-export const db = getFirestore(app);
+export const db = firebase.firestore();
