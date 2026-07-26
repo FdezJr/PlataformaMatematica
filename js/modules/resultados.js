@@ -51,7 +51,8 @@ export function cargarPerfilExistenteLocal() {
             }, 300); 
         } else { 
             showToast("No se encontraron registros en la nube."); 
-            document.getElementById('returningUserBlock').style.display = 'none'; 
+            const retBlock = document.getElementById('returningUserBlock');
+            if (retBlock) retBlock.style.display = 'none'; 
         } 
     }).catch((err) => { 
         console.error(err); 
@@ -60,13 +61,19 @@ export function cargarPerfilExistenteLocal() {
 }
 
 export function finalizarTamizajeYGuardar(resultadosFinales) { 
-    const scoreInh1 = (resultadosFinales.inh_aciertos / resultadosFinales.inh_totales) * 100; 
+    const scoreInh1 = (resultadosFinales.inh_aciertos / (resultadosFinales.inh_totales || 1)) * 100; 
     const scoreInh2 = (resultadosFinales.inhB_aciertos / 8) * 100; 
-    
+    const scoreIntruso = (resultadosFinales.intruso_aciertos / 8) * 100; 
+
+    // Promedio ponderado de Control Inhibitorio incluyendo Intruso
+    const inhPromedio = scoreIntruso !== undefined && !isNaN(scoreIntruso)
+        ? (scoreInh1 + scoreInh2 + scoreIntruso) / 3
+        : (scoreInh1 + scoreInh2) / 2;
+
     const scores = { 
         memoria_trabajo: Math.round(((resultadosFinales.mem1_aciertos + resultadosFinales.mem2_aciertos) / 10) * 100), 
         atencion_sostenida: Math.round((resultadosFinales.att_aciertos / 10) * 100), 
-        control_inhibitorio: Math.round((scoreInh1 + scoreInh2) / 2), 
+        control_inhibitorio: Math.round(inhPromedio), 
         flexibilidad_cognitiva: Math.round(((resultadosFinales.flex_r1 + resultadosFinales.flex_r2) / 8) * 100) 
     }; 
     
@@ -125,10 +132,22 @@ export function generateInterventionPlan(scores) {
     } 
     
     const bibliotecaEstatica = { 
-        memoria_trabajo: [{ titulo: "Cadenas Operativas Inversas", desc: "Resuelve sumas encadenadas reteniendo resultados parciales en mente.", icon: "fa-link" }, { titulo: "Matrices Numéricas Ocultas", desc: "Ubica coordenadas matemáticas en una cuadrícula que desaparece.", icon: "fa-table" }], 
-        atencion_sostenida: [{ titulo: "Rastreador de Secuencias Simétricas", desc: "Encuentra patrones geométricos continuos sin perder la concentración.", icon: "fa-bullseye" }, { titulo: "Filtro Numérico Veloz", desc: "Detecta múltiplos específicos en ráfagas de números de alta velocidad.", icon: "fa-bolt" }], 
-        control_inhibitorio: [{ titulo: "Cruces de Signos Conflictivos", desc: "Resuelve operaciones donde los signos cambian de color y significado.", icon: "fa-ban" }, { titulo: "Desafío Mayor a Veinte", desc: "Cálculo aritmético rápido ignorando distractores menores automatizados.", icon: "fa-hand" }], 
-        flexibilidad_cognitiva: [{ titulo: "Alternador Aritmético Súbito", desc: "Cambia entre sumas y restas inmediatamente según la señal visual cambiante.", icon: "fa-shuffle" }, { titulo: "Clasificador de Polígonos Dinámico", desc: "Ordena figuras geométricas bajo reglas de clasificación mutables.", icon: "fa-shapes" }] 
+        memoria_trabajo: [
+            { titulo: "Cadenas Operativas Inversas", desc: "Resuelve sumas encadenadas reteniendo resultados parciales en mente.", icon: "fa-link" }, 
+            { titulo: "Matrices Numéricas Ocultas", desc: "Ubica coordenadas matemáticas en una cuadrícula que desaparece.", icon: "fa-table" }
+        ], 
+        atencion_sostenida: [
+            { titulo: "Rastreador de Secuencias Simétricas", desc: "Encuentra patrones geométricos continuos sin perder la concentración.", icon: "fa-bullseye" }, 
+            { titulo: "Filtro Numérico Veloz", desc: "Detecta múltiplos específicos en ráfagas de números de alta velocidad.", icon: "fa-bolt" }
+        ], 
+        control_inhibitorio: [
+            { titulo: "Cruces de Signos Conflictivos", desc: "Resuelve operaciones donde los signos cambian de color y significado.", icon: "fa-ban" }, 
+            { titulo: "Desafío Mayor a Veinte", desc: "Cálculo aritmético rápido ignorando distractores menores automatizados.", icon: "fa-hand" }
+        ], 
+        flexibilidad_cognitiva: [
+            { titulo: "Alternador Aritmético Súbito", desc: "Cambia entre sumas y restas inmediatamente según la señal visual cambiante.", icon: "fa-shuffle" }, 
+            { titulo: "Clasificador de Polígonos Dinámico", desc: "Ordena figuras geométricas bajo reglas de clasificación mutables.", icon: "fa-shapes" }
+        ] 
     }; 
     
     const guiasDidacticas = { 
@@ -189,8 +208,10 @@ export async function loadAdminData() {
     const att = appControl.allAdminData.filter(r => r.subcategoria === "Atención Sostenida"); 
     const inh = appControl.allAdminData.filter(r => r.subcategoria === "Control Inhibitorio"); 
     const inhB = appControl.allAdminData.filter(r => r.subcategoria === "Control Inhibitorio - Interferencia"); 
+    const intruso = appControl.allAdminData.filter(r => r.subcategoria === "Control Inhibitorio - Intruso"); 
     const flex = appControl.allAdminData.filter(r => r.subcategoria === "Flexibilidad Cognitiva"); 
 
+    // Renderizado de Tablas
     document.getElementById('tableMemory1').innerHTML = mem1.map(r => { 
         const b = r.esCorrecto ? '<span class="badge badge-success">Correcto</span>' : '<span class="badge badge-error">Incorrecto</span>'; 
         const e = r.errores.length === 0 ? 'Ninguno' : r.errores.map(e => `Pos.${e.posicion}: ${e.elegido} (Era ${e.correcto})`).join('<br>'); 
@@ -198,11 +219,22 @@ export async function loadAdminData() {
     }).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
     
     document.getElementById('tableMemory2').innerHTML = mem2.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.correctRecalls} / 5</span></td><td><span class="badge badge-warning">${r.metricas.correctMath} / 5</span></td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
+    
     document.getElementById('tableAttention').innerHTML = att.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
+    
     document.getElementById('tableInhibition').innerHTML = inh.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertos}</span></td><td><span class="badge badge-error">${r.metricas.falsasAlarmas}</span></td><td><span class="badge badge-warning">${r.metricas.omisiones}</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
-    document.getElementById('tableInhibitionB').innerHTML = inhB.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-purple">${r.metricas.aciertos} / ${r.metricas.totalObjetivo}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
+    
+    document.getElementById('tableInhibitionB').innerHTML = inhB.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-purple">${r.metricas.aciertos} / ${r.metricas.totalObjetivo || 8}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
+    
+    // Tabla del Test de Intruso
+    const tableIntrusoElem = document.getElementById('tableIntruso');
+    if (tableIntrusoElem) {
+        tableIntrusoElem.innerHTML = intruso.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-purple">${r.metricas.aciertos} / ${r.metricas.totalObjetivo || 8}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
+    }
+
     document.getElementById('tableFlex').innerHTML = flex.map(r => `<tr><td class="font-mono text-xs whitespace-nowrap">${formatDate(r.fecha)}</td><td><strong>${r.nombre}</strong></td><td>${r.curso}</td><td><span class="badge badge-success">${r.metricas.aciertosR1} / 4</span></td><td><span class="badge badge-pink">${r.metricas.aciertosR2} / 4</span></td><td><span class="badge badge-purple">${r.metricas.totalAciertos} / 8</span></td></tr>`).join('') || `<tr><td colspan="6" class="text-center py-6" style="color: var(--text-muted);">Sin datos</td></tr>`; 
 
+    // Poblar Selector de Usuarios para el Gráfico
     const users = [...new Set(appControl.allAdminData.map(r => r.nombre))].filter(Boolean); 
     const select = document.getElementById('chartUserSelect'); 
     select.innerHTML = '<option value="">Selecciona un usuario...</option>'; 
@@ -223,6 +255,7 @@ export function renderProfileChart() {
     const userData = appControl.allAdminData.filter(r => r.nombre === userName); 
     let memScore = 0, attScore = 0, inhScore = 0, flexScore = 0; 
     
+    // Memoria de Trabajo
     const m1 = userData.find(r => r.subcategoria === "Memoria de Trabajo - Ordenar"); 
     const m2 = userData.find(r => r.subcategoria === "Memoria de Trabajo - Distractor"); 
     let m1Score = m1 ? ((5 - m1.errores.length) / 5) * 100 : null; 
@@ -231,6 +264,7 @@ export function renderProfileChart() {
     else if (m1Score !== null) memScore = m1Score; 
     else if (m2Score !== null) memScore = m2Score; 
     
+    // Atención Sostenida
     const att = userData.find(r => r.subcategoria === "Atención Sostenida"); 
     if (att) { 
         let hitScore = (att.metricas.aciertos / att.metricas.totalObjetivo) * 50; 
@@ -240,8 +274,11 @@ export function renderProfileChart() {
         attScore = hitScore + ignoreScore; 
     } 
     
+    // Control Inhibitorio (Inhibición 1, Interferencia e Intruso)
     const inh1 = userData.find(r => r.subcategoria === "Control Inhibitorio"); 
     const inh2 = userData.find(r => r.subcategoria === "Control Inhibitorio - Interferencia"); 
+    const inh3 = userData.find(r => r.subcategoria === "Control Inhibitorio - Intruso"); 
+
     let inh1Score = 0; 
     if (inh1) { 
         let totalPos = inh1.metricas.aciertos + inh1.metricas.omisiones; 
@@ -250,11 +287,15 @@ export function renderProfileChart() {
         let ignoreScore = totalNeg > 0 ? (inh1.metricas.rechazosCorrectos / totalNeg) * 50 : 50; 
         inh1Score = hitScore + ignoreScore; 
     } 
-    let inh2Score = inh2 ? (inh2.metricas.aciertos / inh2.metricas.totalObjetivo) * 100 : inh1Score; 
-    if (inh1 && inh2) inhScore = (inh1Score + inh2Score) / 2; 
-    else if (inh1) inhScore = inh1Score; 
-    else if (inh2) inhScore = inh2Score; 
-    
+    let inh2Score = inh2 ? (inh2.metricas.aciertos / (inh2.metricas.totalObjetivo || 8)) * 100 : null; 
+    let inh3Score = inh3 ? (inh3.metricas.aciertos / (inh3.metricas.totalObjetivo || 8)) * 100 : null; 
+
+    const validInhScores = [inh1 ? inh1Score : null, inh2Score, inh3Score].filter(v => v !== null);
+    if (validInhScores.length > 0) {
+        inhScore = validInhScores.reduce((a, b) => a + b, 0) / validInhScores.length;
+    }
+
+    // Flexibilidad Cognitiva
     const flex = userData.find(r => r.subcategoria === "Flexibilidad Cognitiva"); 
     if (flex && flex.metricas) { 
         let total = flex.metricas.totalAciertos !== undefined ? flex.metricas.totalAciertos : ((flex.metricas.aciertosR1 || 0) + (flex.metricas.aciertosR2 || 0)); 
@@ -296,4 +337,8 @@ export function renderProfileChart() {
         } 
     }); 
 }
-                          
+
+// Asignar al objeto global window para asegurar disponibilidad en el HTML
+window.cargarPerfilExistenteLocal = cargarPerfilExistenteLocal;
+window.resetTamizajeParaReevaluacion = resetTamizajeParaReevaluacion;
+window.renderProfileChart = renderProfileChart;
