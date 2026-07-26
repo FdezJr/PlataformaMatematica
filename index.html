@@ -293,6 +293,7 @@
                 <button class="tab-btn" onclick="switchTab('tabAtt', this)">Atención</button>
                 <button class="tab-btn" onclick="switchTab('tabInh', this)">Inhibición</button>
                 <button class="tab-btn" onclick="switchTab('tabFlex', this)">Flexibilidad</button>
+                <button class="tab-btn" onclick="switchTab('tabIntruso', this)">¡Intruso!</button>
                 <button class="tab-btn" onclick="switchTab('tabChart', this)">Perfil</button>
             </div>
             <div id="tabMem">
@@ -309,6 +310,26 @@
                 <div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Resultado</th></tr></thead><tbody id="tableInhibitionB"></tbody></table></div>
             </div>
             <div id="tabFlex" style="display: none;"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Nombre</th><th>Curso</th><th>Aciertos R1</th><th>Aciertos R2</th><th>Total</th></tr></thead><tbody id="tableFlex"></tbody></table></div></div>
+<div id="tabIntruso" style="display: none;">
+    <h3 class="text-lg font-bold mb-4" style="color: var(--primary);">Atención Sostenida: ¡INTRUSO!</h3>
+    <div class="table-wrap mb-8">
+        <table class="data-table text-sm">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre</th>
+                    <th>Aciertos</th>
+                    <th>Omisiones</th>
+                    <th>Falsas Alarmas</th>
+                    <th>Tiempo Reacción</th>
+                    <th>Variabilidad</th>
+                    <th>Interpretación</th>
+                </tr>
+            </thead>
+            <tbody id="tableIntruso"></tbody>
+        </table>
+    </div>
+</div>
             <div id="tabChart" style="display: none;"><div class="glass-card"><h3 class="text-xl font-bold mb-4">Perfil de Funciones Ejecutivas (%)</h3><div class="mb-6"><select id="chartUserSelect" class="input-field" onchange="renderProfileChart()"><option value="">Selecciona un usuario...</option></select></div><div style="max-width: 500px; margin: 0 auto; position: relative;"><canvas id="profileChart"></canvas></div></div></div>
         </div>
     </div>
