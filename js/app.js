@@ -46,6 +46,7 @@ Object.assign(window, {
 
 // Inicialización de la aplicación
 document.addEventListener('DOMContentLoaded', () => {
+    initIntruso();
     initRouter();
     setupAuthListeners();
     setTimeout(verificarUsuarioExistente, 500);
