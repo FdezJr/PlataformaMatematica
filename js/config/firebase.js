@@ -1,6 +1,9 @@
 /**
- * Módulo de Inicialización de Firebase
+ * Módulo de Inicialización de Firebase (Sintaxis Modular v9+)
  */
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+
 const firebaseConfig = { 
     apiKey: "AIzaSyBPvo4UAztPUKREsXaG0dbwKE-nrldlJPk", 
     authDomain: "tamizajefuncionesejecutivas.firebaseapp.com", 
@@ -11,8 +14,7 @@ const firebaseConfig = {
     measurementId: "G-8ZRJM1XBBZ" 
 };
 
-if (!firebase.apps.length) { 
-    firebase.initializeApp(firebaseConfig); 
-}
+// Reutiliza la app si ya fue inicializada o crea una nueva
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export const db = firebase.firestore();
+export const db = getFirestore(app);
