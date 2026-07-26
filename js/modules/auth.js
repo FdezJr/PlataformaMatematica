@@ -72,3 +72,11 @@ export function logoutAdmin() {
     document.getElementById('adminLogin').style.display = 'flex'; 
     document.getElementById('adminPasswordInput').value = ''; 
 }
+
+export function cargarPerfilExistenteLocal() {
+    const perfilGuardado = localStorage.getItem('perfilEstudiante'); // o la clave que utilices
+    if (perfilGuardado) {
+        return JSON.parse(perfilGuardado);
+    }
+    return null;
+}
