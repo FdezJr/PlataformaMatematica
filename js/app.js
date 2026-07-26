@@ -2,7 +2,7 @@
  * Bootstrapper y Vinculación Global
  */
 import { initRouter, openInstructionModal, closeInstructionModal, switchEstTab, switchTab } from './modules/ui.js';
-import { setupAuthListeners, verificarUsuarioExistente, verifyAdminPassword, logoutAdmin } from './modules/auth.js';
+import { setupAuthListeners, verificarUsuarioExistente, cargarPerfilExistenteLocal, verifyAdminPassword, logoutAdmin } from './modules/auth.js';
 import { 
     startMemory1Display, verifyMemory1, 
     startMemory2, submitMathMem2, submitRecallMem2, 
