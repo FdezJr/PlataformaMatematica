@@ -6,6 +6,11 @@ import { showScreen } from './ui.js';
 import { loadAdminData } from './resultados.js';
 
 export function setupAuthListeners() {
+    // Exponer funciones necesarias para los onclick del HTML
+    window.cargarPerfilExistenteLocal = cargarPerfilExistenteLocal;
+    window.verifyAdminPassword = verifyAdminPassword;
+    window.logoutAdmin = logoutAdmin;
+
     const regForm = document.getElementById('registerForm');
     if (regForm) {
         regForm.addEventListener('submit', function(e) { 
@@ -31,7 +36,13 @@ export function setupAuthListeners() {
             t(!course, 'errorCourse', 'inputCourse'); 
             
             if (!valid) return; 
+            
+            // Guardar usuario en el estado
             state.user = { nombre: name, edad: age, curso: course }; 
+            
+            // Guardar en localStorage para visitas futuras
+            localStorage.setItem('math_therapy_user', JSON.stringify(state.user));
+
             showScreen('screenInstrMemory1'); 
         });
     }
@@ -57,26 +68,31 @@ export function verificarUsuarioExistente() {
 }
 
 export function verifyAdminPassword() { 
-    if (document.getElementById('adminPasswordInput').value === ADMIN_PASSWORD) { 
+    const input = document.getElementById('adminPasswordInput');
+    if (input && input.value === ADMIN_PASSWORD) { 
         document.getElementById('adminLogin').style.display = 'none'; 
         document.getElementById('adminDashboard').style.display = 'block'; 
-        loadAdminData(); 
+        loadAdminData(); // Carga todas las tablas (incluyendo Intruso) desde resultados.js
     } else { 
-        document.getElementById('errorPassword').classList.add('visible'); 
-        setTimeout(() => document.getElementById('errorPassword').classList.remove('visible'), 2000); 
+        const err = document.getElementById('errorPassword');
+        if (err) {
+            err.classList.add('visible'); 
+            setTimeout(() => err.classList.remove('visible'), 2000); 
+        }
     } 
 }
 
 export function logoutAdmin() { 
     document.getElementById('adminDashboard').style.display = 'none'; 
     document.getElementById('adminLogin').style.display = 'flex'; 
-    document.getElementById('adminPasswordInput').value = ''; 
+    const input = document.getElementById('adminPasswordInput');
+    if (input) input.value = ''; 
 }
 
 export function cargarPerfilExistenteLocal() {
-    const perfilGuardado = localStorage.getItem('perfilEstudiante'); // o la clave que utilices
-    if (perfilGuardado) {
-        return JSON.parse(perfilGuardado);
+    const localUser = localStorage.getItem('math_therapy_user'); 
+    if (localUser) {
+        state.user = JSON.parse(localUser);
+        showScreen('screenFinal'); // Muestra la pantalla del perfil del estudiante
     }
-    return null;
 }
