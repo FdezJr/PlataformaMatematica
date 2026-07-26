@@ -1,6 +1,7 @@
 /**
  * Bootstrapper y Vinculación Global
  */
+import { initIntruso } from './modules/intruso.js';
 import { initRouter, openInstructionModal, closeInstructionModal, switchEstTab, switchTab } from './modules/ui.js';
 import { setupAuthListeners, verificarUsuarioExistente, cargarPerfilExistenteLocal, verifyAdminPassword, logoutAdmin } from './modules/auth.js';
 import { 
