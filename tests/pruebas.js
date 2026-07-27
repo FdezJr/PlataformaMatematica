@@ -1,361 +1,316 @@
 /**
  * tests/pruebas.js
- * Lógica de ejecución de tareas cognitivas: Memoria, Atención, Control Inhibitorio (incl. Intruso) y Flexibilidad
+ * Lógica modular para todas las pruebas neurocognitivas
  */
 
-import { db } from '../firebase.js';
 import { state } from '../core/state.js';
 import { showScreen } from '../ui/ui.js';
-import { showToast, shuffleArray, getRandomInt } from '../utils/helpers.js';
-import { finalizarTamizajeYGuardar } from '../auth/resultados.js';
+import { generateRandomNumbers, showToast, shuffleArray } from '../utils/helpers.js';
+import { renderFinalResults } from '../auth/resultados.js';
+
+// Timer para la Prueba de Memoria 1
+let mem1TimerInterval = null;
 
 /* ==========================================================================
-   1. MEMORIA DE TRABAJO 1 (Ordenamiento Numérico)
+   1. MEMORIA DE TRABAJO 1 (Ordenamiento con exposición de 10s)
    ========================================================================== */
+
 export function startMemory1Test() {
-    state.mem1.sequence = [];
-    state.mem1.userSequence = [];
-    state.mem1.errors = [];
-
-    // Generar secuencia única de 5 dígitos
-    while (state.mem1.sequence.length < 5) {
-        const num = getRandomInt(1, 9);
-        if (!state.mem1.sequence.includes(num)) {
-            state.mem1.sequence.push(num);
-        }
-    }
-
-    const displayElem = document.getElementById('mem1SequenceDisplay');
-    if (displayElem) displayElem.innerText = state.mem1.sequence.join(' - ');
+    state.memory1.sequence = generateRandomNumbers(5, 1, 9);
+    state.memory1.userInput = [];
 
     showScreen('screenTestMemory1');
+
+    const seqDisplay = document.getElementById('mem1SequenceDisplay');
+    const inputDisplay = document.getElementById('mem1UserInput');
+    const controlsContainer = document.getElementById('mem1ControlsContainer');
+    const timerBadge = document.getElementById('mem1TimerBadge');
+    const countdownEl = document.getElementById('mem1Countdown');
+
+    seqDisplay.innerText = state.memory1.sequence.join(' - ');
+    inputDisplay.innerText = '-';
+    
+    // Bloquear teclado y resetear colores del indicador
+    controlsContainer.classList.add('opacity-40', 'pointer-events-none');
+    timerBadge.className = "mb-4 py-2 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold inline-block transition-all";
+    
+    let timeLeft = 10;
+    countdownEl.innerText = timeLeft;
+
+    if (mem1TimerInterval) clearInterval(mem1TimerInterval);
+
+    // Cuenta regresiva de 10 segundos
+    mem1TimerInterval = setInterval(() => {
+        timeLeft--;
+        countdownEl.innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(mem1TimerInterval);
+
+            // Ocultar la secuencia e instruir la respuesta
+            seqDisplay.innerText = '❓ - ❓ - ❓ - ❓ - ❓';
+            timerBadge.innerText = '✏️ ¡Ingresa los números de MENOR a MAYOR!';
+            timerBadge.className = "mb-4 py-2 px-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-bold inline-block transition-all";
+
+            // Activar el teclado numérico
+            controlsContainer.classList.remove('opacity-40', 'pointer-events-none');
+        }
+    }, 1000);
 }
 
 export function selectMemory1Number(num) {
-    if (state.mem1.userSequence.length >= 5) return;
-    state.mem1.userSequence.push(num);
-    
-    const inputDisplay = document.getElementById('mem1UserInput');
-    if (inputDisplay) inputDisplay.innerText = state.mem1.userSequence.join(' - ');
+    if (state.memory1.userInput.length < 5) {
+        state.memory1.userInput.push(num);
+        document.getElementById('mem1UserInput').innerText = state.memory1.userInput.join(' - ');
+    }
 }
 
 export function clearMemory1Selection() {
-    state.mem1.userSequence = [];
-    const inputDisplay = document.getElementById('mem1UserInput');
-    if (inputDisplay) inputDisplay.innerText = '-';
+    state.memory1.userInput = [];
+    document.getElementById('mem1UserInput').innerText = '-';
 }
 
 export function submitMemory1Answer() {
-    if (state.mem1.userSequence.length < 5) {
-        showToast("Debes seleccionar los 5 números.");
+    if (state.memory1.userInput.length < 5) {
+        showToast('Por favor ingresa los 5 números');
         return;
     }
 
-    // Ordenamiento correcto esperado (ascendente)
-    const sortedExpected = [...state.mem1.sequence].sort((a, b) => a - b);
-    const errors = [];
+    const sortedTarget = [...state.memory1.sequence].sort((a, b) => a - b);
+    const isCorrect = JSON.stringify(state.memory1.userInput) === JSON.stringify(sortedTarget);
 
-    state.mem1.userSequence.forEach((val, idx) => {
-        if (val !== sortedExpected[idx]) {
-            errors.push({ posicion: idx + 1, elegido: val, correcto: sortedExpected[idx] });
-        }
-    });
+    state.memory1.score = isCorrect ? 10 : 0;
+    state.memory1.completed = true;
 
-    state.mem1.errors = errors;
-    const esCorrecto = errors.length === 0;
-
-    // Guardar resultado crudo de Memoria 1
-    db.collection("resultados").add({
-        nombre: state.user.nombre,
-        curso: state.user.curso,
-        subcategoria: "Memoria de Trabajo - Ordenar",
-        esCorrecto: esCorrecto,
-        errores: errors,
-        fecha: new Date().toISOString()
-    });
-
-    // Avanzar a la instrucción de Memoria 2
+    showToast(isCorrect ? '¡Excelente memoria!' : 'Respuesta registrada');
     showScreen('screenInstrMemory2');
 }
 
+
 /* ==========================================================================
-   2. MEMORIA DE TRABAJO 2 (Operaciones + Palabras / Operation Span)
+   2. MEMORIA DE TRABAJO 2 (Operación con Distractor)
    ========================================================================== */
-const MEM2_TRIALS = [
-    { math: "3 + 2 = 5", isMathCorrect: true, word: "Lápiz" },
-    { math: "7 - 4 = 2", isMathCorrect: false, word: "Regla" },
-    { math: "4 + 4 = 8", isMathCorrect: true, word: "Libro" },
-    { math: "9 - 5 = 3", isMathCorrect: false, word: "Esfera" },
-    { math: "5 + 3 = 8", isMathCorrect: true, word: "Ángulo" }
+
+const MEMORY2_TRIALS = [
+    { math: '4 + 3 = 7', isCorrect: true, word: 'ÁNGULO' },
+    { math: '9 - 4 = 6', isCorrect: false, word: 'MATRIZ' },
+    { math: '5 × 2 = 10', isCorrect: true, word: 'VECTOR' },
+    { math: '12 ÷ 3 = 5', isCorrect: false, word: 'RADIO' }
 ];
 
+let currentMem2Index = 0;
+
 export function startMemory2Test() {
-    state.mem2.currentTrial = 0;
-    state.mem2.results = [];
-    state.mem2.totalMathCorrect = 0;
-    renderMemory2Trial();
+    currentMem2Index = 0;
+    state.memory2.responses = [];
+    showNextMemory2Trial();
     showScreen('screenTestMemory2');
 }
 
-function renderMemory2Trial() {
-    const trial = MEM2_TRIALS[state.mem2.currentTrial];
-    const mathElem = document.getElementById('mem2MathOp');
-    const wordElem = document.getElementById('mem2WordDisplay');
-    
-    if (mathElem) mathElem.innerText = trial.math;
-    if (wordElem) wordElem.innerText = trial.word;
-}
-
-export function processMemory2Response(userMathChoice, selectedWord) {
-    const trial = MEM2_TRIALS[state.mem2.currentTrial];
-    const isMathRight = (userMathChoice === trial.isMathCorrect);
-    const isWordRight = (selectedWord === trial.word);
-
-    if (isMathRight) state.mem2.totalMathCorrect++;
-    state.mem2.results.push({ mathCorrect: isMathRight, wordCorrect: isWordRight });
-
-    state.mem2.currentTrial++;
-
-    if (state.mem2.currentTrial < MEM2_TRIALS.length) {
-        renderMemory2Trial();
+function showNextMemory2Trial() {
+    if (currentMem2Index < MEMORY2_TRIALS.length) {
+        const trial = MEMORY2_TRIALS[currentMem2Index];
+        document.getElementById('mem2MathOp').innerText = trial.math;
+        document.getElementById('mem2WordDisplay').innerText = trial.word;
     } else {
-        // Guardar resultados de Memoria 2
-        const correctRecalls = state.mem2.results.filter(r => r.wordCorrect).length;
-        db.collection("resultados").add({
-            nombre: state.user.nombre,
-            curso: state.user.curso,
-            subcategoria: "Memoria de Trabajo - Distractor",
-            metricas: {
-                correctRecalls: correctRecalls,
-                correctMath: state.mem2.totalMathCorrect
-            },
-            fecha: new Date().toISOString()
-        });
+        // Evaluar puntaje acumulado
+        const correctCount = state.memory2.responses.filter(r => r.userEvaluatedMath === r.actualMathCorrect).length;
+        state.memory2.score = Math.round((correctCount / MEMORY2_TRIALS.length) * 10);
+        state.memory2.completed = true;
 
-        // Pasar a la instrucción de Atención Sostenida
+        showToast('Prueba de memoria completada');
         showScreen('screenInstrAttention');
     }
 }
 
+export function processMemory2Response(userAnswer) {
+    const trial = MEMORY2_TRIALS[currentMem2Index];
+    state.memory2.responses.push({
+        word: trial.word,
+        actualMathCorrect: trial.isCorrect,
+        userEvaluatedMath: userAnswer
+    });
+
+    currentMem2Index++;
+    showNextMemory2Trial();
+}
+
+
 /* ==========================================================================
-   3. ATENCIÓN SOSTENIDA (Cancelación de Estímulos / Target)
+   3. ATENCIÓN SOSTENIDA (Cancelación Numérica)
    ========================================================================== */
+
+let attentionTargetsCount = 0;
+let attentionSelectedCount = 0;
+let attentionErrorsCount = 0;
+
 export function startAttentionTest() {
-    state.att.foundCount = 0;
-    state.att.wrongClicks = 0;
-    state.att.startTime = Date.now();
-
-    const grid = document.getElementById('attentionGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-
-    // Generar un tablero de 64 ítems (10 objetivos "7", 54 distractores)
-    const items = [];
-    for (let i = 0; i < 10; i++) items.push({ type: 'target', val: '7' });
-    const distractors = ['1', '3', '4', '8', '2', '9'];
-    for (let i = 0; i < 54; i++) {
-        const d = distractors[Math.floor(Math.random() * distractors.length)];
-        items.push({ type: 'distractor', val: d });
-    }
-
-    const shuffled = shuffleArray(items);
-
-    shuffled.forEach((item) => {
-        const btn = document.createElement('button');
-        btn.className = 'attention-btn p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] font-mono font-bold text-lg hover:border-[var(--primary)] transition-all';
-        btn.innerText = item.val;
-        btn.onclick = () => handleAttentionClick(btn, item.type);
-        grid.appendChild(btn);
-    });
-
     showScreen('screenTestAttention');
-}
-
-function handleAttentionClick(buttonElem, type) {
-    if (buttonElem.disabled) return;
-    buttonElem.disabled = true;
-
-    if (type === 'target') {
-        buttonElem.classList.add('bg-emerald-500/20', 'border-emerald-500', 'text-emerald-400');
-        state.att.foundCount++;
-    } else {
-        buttonElem.classList.add('bg-rose-500/20', 'border-rose-500', 'text-rose-400');
-        state.att.wrongClicks++;
-    }
-}
-
-export function finishAttentionTest() {
-    const totalObjetivo = 10;
-    const omisiones = Math.max(0, totalObjetivo - state.att.foundCount);
-
-    db.collection("resultados").add({
-        nombre: state.user.nombre,
-        curso: state.user.curso,
-        subcategoria: "Atención Sostenida",
-        metricas: {
-            aciertos: state.att.foundCount,
-            falsasAlarmas: state.att.wrongClicks,
-            omisiones: omisiones,
-            totalObjetivo: totalObjetivo
-        },
-        fecha: new Date().toISOString()
-    });
-
-    showScreen('screenInstrInhibition');
-}
-
-/* ==========================================================================
-   4. CONTROL INHIBITORIO 1 (Conflicto / Go-NoGo)
-   ========================================================================== */
-export function finishInhibition1Test(aciertos, falsasAlarmas, omisiones, rechazosCorrectos) {
-    state.inh = { aciertos, falsasAlarmas, omisiones, rechazosCorrectos };
-
-    db.collection("resultados").add({
-        nombre: state.user.nombre,
-        curso: state.user.curso,
-        subcategoria: "Control Inhibitorio",
-        metricas: state.inh,
-        fecha: new Date().toISOString()
-    });
-
-    showScreen('screenInstrInhibitionB');
-}
-
-/* ==========================================================================
-   5. CONTROL INHIBITORIO 2 (Interferencia Numérica)
-   ========================================================================== */
-export function finishInhibition2Test(aciertos) {
-    state.inhB = { aciertos };
-
-    db.collection("resultados").add({
-        nombre: state.user.nombre,
-        curso: state.user.curso,
-        subcategoria: "Control Inhibitorio - Interferencia",
-        metricas: { aciertos: aciertos, totalObjetivo: 8 },
-        fecha: new Date().toISOString()
-    });
-
-    // Avanzar a la nueva actividad: El Intruso
-    showScreen('screenInstrIntruso');
-}
-
-/* ==========================================================================
-   6. CONTROL INHIBITORIO 3 (Prueba de "¡INTRUSO!")
-   ========================================================================== */
-const INTRUSO_TRIALS = [
-    { options: ['2', '4', '6', '7'], correctIndex: 3, reason: "7 es impar" },
-    { options: ['10', '15', '20', '23'], correctIndex: 3, reason: "23 no es múltiplo de 5" },
-    { options: ['△', '□', '◯', '3'], correctIndex: 3, reason: "3 es un número, no una figura" },
-    { options: ['1/2', '2/4', '3/6', '3/5'], correctIndex: 3, reason: "3/5 no es equivalente a 0.5" },
-    { options: ['5', '11', '13', '16'], correctIndex: 3, reason: "16 no es número primo" },
-    { options: ['+', '-', '×', 'A'], correctIndex: 3, reason: "A es una letra, no un operador" },
-    { options: ['100', '200', '300', '350'], correctIndex: 3, reason: "350 no cambia de 100 en 100" },
-    { options: ['9', '16', '25', '30'], correctIndex: 3, reason: "30 no es un cuadrado perfecto" }
-];
-
-let currentIntrusoTrial = 0;
-
-export function startIntrusoTest() {
-    currentIntrusoTrial = 0;
-    state.intruso.aciertos = 0;
-    renderIntrusoTrial();
-    showScreen('screenTestIntruso');
-}
-
-function renderIntrusoTrial() {
-    const trial = INTRUSO_TRIALS[currentIntrusoTrial];
-    const container = document.getElementById('intrusoOptionsContainer');
-    const counter = document.getElementById('intrusoTrialCounter');
-
-    if (counter) counter.innerText = `Ensayo ${currentIntrusoTrial + 1} de ${INTRUSO_TRIALS.length}`;
-
-    if (!container) return;
+    const container = document.getElementById('attentionGrid');
     container.innerHTML = '';
 
-    // Preparar opciones mezcladas guardando la respuesta correcta
-    const optionObjects = trial.options.map((opt, idx) => ({
-        text: opt,
-        isCorrect: idx === trial.correctIndex
-    }));
+    attentionTargetsCount = 0;
+    attentionSelectedCount = 0;
+    attentionErrorsCount = 0;
 
-    const shuffled = shuffleArray(optionObjects);
+    // Genera 32 números aleatorios
+    const numbers = [];
+    for (let i = 0; i < 32; i++) {
+        const val = Math.floor(Math.random() * 9) + 1;
+        numbers.push(val);
+        if (val === 7) attentionTargetsCount++;
+    }
 
-    shuffled.forEach(opt => {
+    numbers.forEach((val) => {
         const btn = document.createElement('button');
-        btn.className = 'w-full p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] font-bold text-xl hover:border-[var(--purple)] hover:bg-purple-500/10 transition-all';
-        btn.innerText = opt.text;
-        btn.onclick = () => selectIntrusoAnswer(opt.isCorrect);
+        btn.innerText = val;
+        btn.className = 'p-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-white transition-colors text-base border border-[var(--border)]';
+        
+        btn.onclick = () => {
+            if (btn.disabled) return;
+            btn.disabled = true;
+
+            if (val === 7) {
+                btn.className = 'p-3 bg-teal-500/20 border border-teal-500 text-teal-300 rounded-xl font-bold text-base';
+                attentionSelectedCount++;
+            } else {
+                btn.className = 'p-3 bg-rose-500/20 border border-rose-500 text-rose-300 rounded-xl font-bold text-base';
+                attentionErrorsCount++;
+            }
+        };
+
         container.appendChild(btn);
     });
 }
 
-function selectIntrusoAnswer(isCorrect) {
-    if (isCorrect) {
-        state.intruso.aciertos++;
+export function finishAttentionTest() {
+    const totalFound = Math.min(attentionSelectedCount, attentionTargetsCount);
+    const rawScore = totalFound - (attentionErrorsCount * 0.5);
+    state.attention.score = Math.max(0, Math.min(10, Math.round((rawScore / (attentionTargetsCount || 1)) * 10)));
+    state.attention.completed = true;
+
+    showToast('Prueba de atención registrada');
+    showScreen('screenInstrInhibition');
+}
+
+
+/* ==========================================================================
+   4. CONTROL INHIBITORIO 1 y 2
+   ========================================================================== */
+
+export function finishInhibition1Test(aciertos, omisiones, comisiones, tiempo) {
+    state.inhibition1.score = Math.round((aciertos / 10) * 10);
+    state.inhibition1.completed = true;
+    showScreen('screenInstrInhibitionB');
+}
+
+export function finishInhibition2Test(aciertos) {
+    state.inhibition2.score = Math.round((aciertos / 10) * 10);
+    state.inhibition2.completed = true;
+    showScreen('screenInstrIntruso');
+}
+
+
+/* ==========================================================================
+   5. CONTROL INHIBITORIO 3: EL INTRUSO
+   ========================================================================== */
+
+const INTRUSO_TRIALS = [
+    { options: ['2', '4', '6', '7'], intruderIndex: 3, rule: 'Números Pares vs Impar' },
+    { options: ['3', '6', '9', '11'], intruderIndex: 3, rule: 'Múltiplos de 3' },
+    { options: ['5', '10', '15', '18'], intruderIndex: 3, rule: 'Múltiplos de 5' },
+    { options: ['Cuadrado', 'Círculo', 'Triángulo', 'Cubo'], intruderIndex: 3, rule: 'Figuras 2D vs 3D' },
+    { options: ['1/2', '2/4', '4/8', '1/3'], intruderIndex: 3, rule: 'Fracciones Equivalentes a 0.5' },
+    { options: ['11', '13', '17', '21'], intruderIndex: 3, rule: 'Números Primos' },
+    { options: ['1', '4', '9', '12'], intruderIndex: 3, rule: 'Cuadrados Perfectos' },
+    { options: ['+5', '+10', '+15', 'x2'], intruderIndex: 3, rule: 'Operaciones Aditivas vs Multiplicativa' }
+];
+
+let currentIntrusoTrialIndex = 0;
+let intrusoCorrectAnswersCount = 0;
+
+export function startIntrusoTest() {
+    currentIntrusoTrialIndex = 0;
+    intrusoCorrectAnswersCount = 0;
+    showScreen('screenTestIntruso');
+    renderIntrusoTrial();
+}
+
+function renderIntrusoTrial() {
+    const trial = INTRUSO_TRIALS[currentIntrusoTrialIndex];
+    document.getElementById('intrusoTrialCounter').innerText = `Ensayo ${currentIntrusoTrialIndex + 1} de ${INTRUSO_TRIALS.length}`;
+
+    const container = document.getElementById('intrusoOptionsContainer');
+    container.innerHTML = '';
+
+    trial.options.forEach((optText, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'p-5 bg-slate-900 border border-[var(--border)] hover:border-purple-500 rounded-2xl text-lg font-bold text-white hover:text-purple-300 transition-all shadow-md';
+        btn.innerText = optText;
+        btn.onclick = () => selectIntrusoOption(index);
+        container.appendChild(btn);
+    });
+}
+
+export function selectIntrusoOption(selectedIndex) {
+    const trial = INTRUSO_TRIALS[currentIntrusoTrialIndex];
+    
+    if (selectedIndex === trial.intruderIndex) {
+        intrusoCorrectAnswersCount++;
     }
 
-    currentIntrusoTrial++;
+    currentIntrusoTrialIndex++;
 
-    if (currentIntrusoTrial < INTRUSO_TRIALS.length) {
+    if (currentIntrusoTrialIndex < INTRUSO_TRIALS.length) {
         renderIntrusoTrial();
     } else {
-        // Guardar resultado de Intruso en Firestore
-        db.collection("resultados").add({
-            nombre: state.user.nombre,
-            curso: state.user.curso,
-            subcategoria: "Control Inhibitorio - Intruso",
-            metricas: { aciertos: state.intruso.aciertos, totalObjetivo: INTRUSO_TRIALS.length },
-            fecha: new Date().toISOString()
-        });
+        // Calcular resultado final del Intruso
+        const score = Math.round((intrusoCorrectAnswersCount / INTRUSO_TRIALS.length) * 10);
+        state.inhibition3 = {
+            score: score,
+            correct: intrusoCorrectAnswersCount,
+            total: INTRUSO_TRIALS.length,
+            completed: true
+        };
 
-        // Avanzar a la instrucción de Flexibilidad Cognitiva
+        showToast('Prueba del Intruso completada');
         showScreen('screenInstrFlexibility');
     }
 }
 
+
 /* ==========================================================================
-   7. FLEXIBILIDAD COGNITIVA Y FINALIZACIÓN
+   6. FLEXIBILIDAD COGNITIVA Y CIERRE
    ========================================================================== */
-export function finishFlexibilityTest(scoreR1, scoreR2) {
-    state.flex.scoreR1 = scoreR1;
-    state.flex.scoreR2 = scoreR2;
 
-    const totalAciertos = scoreR1 + scoreR2;
+export function finishFlexibilityTest(aciertos, perseveraciones) {
+    state.flexibility.score = Math.round((aciertos / 10) * 10);
+    state.flexibility.completed = true;
 
-    db.collection("resultados").add({
-        nombre: state.user.nombre,
-        curso: state.user.curso,
-        subcategoria: "Flexibilidad Cognitiva",
-        metricas: { aciertosR1: scoreR1, aciertosR2: scoreR2, totalAciertos: totalAciertos },
-        fecha: new Date().toISOString()
-    });
-
-    // Consolidación final de todas las pruebas para el cálculo del Perfil Cognitivo
-    const resultadosFinales = {
-        mem1_aciertos: state.mem1.errors.length === 0 ? 5 : (5 - state.mem1.errors.length),
-        mem2_aciertos: state.mem2.results.filter(r => r.wordCorrect).length,
-        att_aciertos: state.att.foundCount,
-        inh_aciertos: state.inh.aciertos,
-        inh_totales: (state.inh.aciertos + state.inh.omisiones) || 10,
-        inhB_aciertos: state.inhB.aciertos,
-        intruso_aciertos: state.intruso.aciertos,
-        flex_r1: scoreR1,
-        flex_r2: scoreR2
-    };
-
-    finalizarTamizajeYGuardar(resultadosFinales);
+    showToast('¡Evaluación Neurocognitiva Completada!');
+    renderFinalResults();
 }
 
-// Registro global de funciones expuestas para botones del DOM
+
+/* ==========================================================================
+   ASIGNACIÓN AL OBJETO GLOBAL WINDOW (Para eventos inline de HTML)
+   ========================================================================== */
+
 window.startMemory1Test = startMemory1Test;
 window.selectMemory1Number = selectMemory1Number;
 window.clearMemory1Selection = clearMemory1Selection;
 window.submitMemory1Answer = submitMemory1Answer;
+
 window.startMemory2Test = startMemory2Test;
 window.processMemory2Response = processMemory2Response;
+
 window.startAttentionTest = startAttentionTest;
 window.finishAttentionTest = finishAttentionTest;
+
 window.finishInhibition1Test = finishInhibition1Test;
 window.finishInhibition2Test = finishInhibition2Test;
+
 window.startIntrusoTest = startIntrusoTest;
+window.selectIntrusoOption = selectIntrusoOption;
+
 window.finishFlexibilityTest = finishFlexibilityTest;
