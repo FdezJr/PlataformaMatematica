@@ -1,56 +1,44 @@
 /**
  * utils/helpers.js
- * Funciones de utilidad general: notificaciones, fechas y funciones matemáticas/arreglos
+ * Funciones auxiliares globales para la plataforma
  */
 
 /**
- * Muestra un mensaje flotante (Toast) en la pantalla
- * @param {string} message - Mensaje a desplegar
+ * Muestra una notificación flotante (Toast)
+ * @param {string} message - Texto a mostrar en la notificación
  */
 export function showToast(message) {
-    let toast = document.getElementById('toastNotification');
-    
-    // Si no existe el contenedor del toast en el DOM, lo crea dinámicamente
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'toastNotification';
-        toast.className = 'toast-notification';
-        document.body.appendChild(toast);
-    }
-    
+    const toast = document.getElementById('toastNotification');
+    if (!toast) return;
+
     toast.innerText = message;
     toast.classList.add('show');
-    
-    // Ocultar automáticamente después de 3 segundos
+
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
 }
 
 /**
- * Convierte una fecha ISO a un formato local accesible (DD/MM/AAAA, HH:MM)
- * @param {string} isoString - Cadena de fecha en formato ISO
- * @returns {string} Fecha formateada
+ * Genera un array de N números aleatorios únicos en un rango [min, max]
+ * @param {number} count - Cantidad de números a generar
+ * @param {number} min - Valor mínimo
+ * @param {number} max - Valor máximo
+ * @returns {number[]} Array con números aleatorios únicos
  */
-export function formatDate(isoString) {
-    if (!isoString) return '-';
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return '-';
-    
-    return date.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+export function generateRandomNumbers(count, min, max) {
+    const numbers = new Set();
+    while (numbers.size < count) {
+        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+        numbers.add(randomNum);
+    }
+    return Array.from(numbers);
 }
 
 /**
- * Mezcla aleatoriamente los elementos de un arreglo (Algoritmo Fisher-Yates)
- * Útil para aleatorizar la posición de los estímulos o ítems intrusos
- * @param {Array} array 
- * @returns {Array} Nueva copia del arreglo desordenado
+ * Mezcla aleatoriamente los elementos de un array (Algoritmo Fisher-Yates)
+ * @param {Array} array - Array original
+ * @returns {Array} Nuevo array mezclado
  */
 export function shuffleArray(array) {
     const arr = [...array];
@@ -62,8 +50,16 @@ export function shuffleArray(array) {
 }
 
 /**
- * Genera un número entero aleatorio entre min y max (ambos inclusive)
+ * Formatea una fecha al estándar local
+ * @param {Date} date - Objeto fecha
+ * @returns {string} Fecha formateada
  */
-export function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+export function formatDate(date = new Date()) {
+    return new Intl.DateTimeFormat('es-DO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
 }
