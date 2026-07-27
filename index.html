@@ -16,7 +16,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Estilos Personalizados y Variables -->
+    <!-- Estilos Incorporados -->
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -144,14 +144,14 @@
 
 
         <!-- ========================================================================== -->
-        <!-- 2. MEMORIA DE TRABAJO 1 (Instrucciones y Test) -->
+        <!-- 2. MEMORIA DE TRABAJO 1 (Instrucciones y Test con Temporizador) -->
         <!-- ========================================================================== -->
         <section id="screenInstrMemory1" class="screen">
             <div class="bg-[var(--bg-card)] border border-[var(--border)] p-6 rounded-2xl">
                 <span class="text-3xl">🧠</span>
                 <h2 class="text-xl font-bold text-white mt-2">Prueba 1: Memoria de Trabajo (Ordenamiento)</h2>
                 <p class="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">
-                    A continuación verás una secuencia de 5 números. Memorízala y luego ingrésala **de menor a mayor** (en orden ascendente).
+                    A continuación verás una secuencia de 5 números por <strong>10 segundos</strong>. Memorízala bien. Cuando el tiempo termine, la secuencia se ocultará y podrás ingresarla <strong>de menor a mayor</strong>.
                 </p>
                 <button onclick="startMemory1Test()" class="w-full mt-6 py-3 rounded-xl bg-[var(--primary)] text-slate-900 font-bold">
                     Iniciar Prueba
@@ -162,34 +162,43 @@
         <section id="screenTestMemory1" class="screen">
             <div class="bg-[var(--bg-card)] border border-[var(--border)] p-6 rounded-2xl text-center">
                 <span class="text-xs text-[var(--text-muted)] uppercase tracking-wider">Memoria de Trabajo 1/2</span>
-                <h3 class="text-lg font-bold text-white mb-4">Ordena la secuencia de menor a mayor</h3>
+                <h3 class="text-lg font-bold text-white mb-3">Ordena la secuencia de menor a mayor</h3>
                 
-                <div class="bg-slate-900 p-4 rounded-xl border border-[var(--border)] mb-4">
-                    <span class="text-xs text-[var(--text-muted)] block mb-1">Secuencia Original:</span>
-                    <div id="mem1SequenceDisplay" class="text-2xl font-mono font-bold text-teal-400"> - </div>
+                <!-- Badge de Cuenta Regresiva -->
+                <div id="mem1TimerBadge" class="mb-4 py-2 px-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold inline-block transition-all">
+                    ⏱️ Memoriza la secuencia: <span id="mem1Countdown" class="text-sm font-extrabold text-amber-400">10</span>s
                 </div>
 
+                <!-- Muestra de la Secuencia -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-[var(--border)] mb-4">
+                    <span class="text-xs text-[var(--text-muted)] block mb-1">Secuencia de Números:</span>
+                    <div id="mem1SequenceDisplay" class="text-2xl font-mono font-bold text-teal-400 tracking-wider"> - </div>
+                </div>
+
+                <!-- Respuesta del Usuario -->
                 <div class="bg-slate-900/50 p-4 rounded-xl border border-[var(--border)] mb-6">
                     <span class="text-xs text-[var(--text-muted)] block mb-1">Tu Respuesta:</span>
-                    <div id="mem1UserInput" class="text-2xl font-mono font-bold text-white"> - </div>
+                    <div id="mem1UserInput" class="text-2xl font-mono font-bold text-white tracking-wider"> - </div>
                 </div>
 
-                <!-- Teclado Numérico -->
-                <div class="grid grid-cols-3 gap-2 mb-4">
-                    <script>
-                        for(let i=1; i<=9; i++){
-                            document.write(`<button onclick="selectMemory1Number(${i})" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold text-white transition-colors">${i}</button>`);
-                        }
-                    </script>
-                </div>
+                <!-- Contenedor del Teclado (Bloqueado por defecto durante memorización) -->
+                <div id="mem1ControlsContainer" class="opacity-40 pointer-events-none transition-all duration-300">
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <script>
+                            for(let i=1; i<=9; i++){
+                                document.write(`<button onclick="selectMemory1Number(${i})" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-lg font-bold text-white transition-colors">${i}</button>`);
+                            }
+                        </script>
+                    </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="clearMemory1Selection()" class="py-2.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl font-semibold text-xs">
-                        Borrar
-                    </button>
-                    <button onclick="submitMemory1Answer()" class="py-2.5 bg-[var(--primary)] text-slate-900 rounded-xl font-bold text-xs">
-                        Enviar
-                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="clearMemory1Selection()" class="py-2.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl font-semibold text-xs">
+                            Borrar
+                        </button>
+                        <button onclick="submitMemory1Answer()" class="py-2.5 bg-[var(--primary)] text-slate-900 rounded-xl font-bold text-xs">
+                            Enviar
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -229,10 +238,10 @@
 
                 <p class="text-xs text-[var(--text-muted)] mb-3">¿La operación matemática de arriba es correcta?</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="processMemory2Response(true, document.getElementById('mem2WordDisplay').innerText)" class="py-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold rounded-xl hover:bg-emerald-500/30">
+                    <button onclick="processMemory2Response(true)" class="py-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold rounded-xl hover:bg-emerald-500/30">
                         ✓ Correcta
                     </button>
-                    <button onclick="processMemory2Response(false, document.getElementById('mem2WordDisplay').innerText)" class="py-3 bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold rounded-xl hover:bg-rose-500/30">
+                    <button onclick="processMemory2Response(false)" class="py-3 bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold rounded-xl hover:bg-rose-500/30">
                         ✗ Incorrecta
                     </button>
                 </div>
@@ -248,7 +257,7 @@
                 <span class="text-3xl">🎯</span>
                 <h2 class="text-xl font-bold text-white mt-2">Prueba 3: Atención Sostenida</h2>
                 <p class="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">
-                    Aparecerá una retícula con muchos números. Haz clic rápidamente únicamente en todos los números **"7"** ignorando los demás.
+                    Aparecerá una retícula con muchos números. Haz clic rápidamente únicamente en todos los números <strong>"7"</strong> ignorando los demás.
                 </p>
                 <button onclick="startAttentionTest()" class="w-full mt-6 py-3 rounded-xl bg-[var(--primary)] text-slate-900 font-bold">
                     Iniciar Prueba
@@ -310,7 +319,7 @@
                 <span class="text-3xl">🔍</span>
                 <h2 class="text-xl font-bold text-white mt-2">Prueba 5: ¡Encuentra al Intruso!</h2>
                 <p class="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">
-                    En cada ensayo verás 4 elementos. Tres de ellos comparten una regla matemática o un patrón. **Descubre e inhibe la distracción para seleccionar la opción que NO pertenece al grupo.**
+                    En cada ensayo verás 4 elementos. Tres de ellos comparten una regla matemática o un patrón. <strong>Descubre e inhibe la distracción para seleccionar la opción que NO pertenece al grupo.</strong>
                 </p>
                 <button onclick="startIntrusoTest()" class="w-full mt-6 py-3 rounded-xl bg-[var(--purple)] text-white font-bold hover:brightness-110 transition-all">
                     Iniciar Prueba del Intruso
