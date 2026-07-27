@@ -1,7 +1,7 @@
 /**
- * Módulo de Inicialización de Firebase (Importación CDN para navegador)
+ * Módulo de Inicialización de Firebase (Carga CDN para navegador)
  */
-import firebase from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js";
+import "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js";
 import "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js";
 
 const firebaseConfig = { 
@@ -13,6 +13,9 @@ const firebaseConfig = {
     appId: "1:730702504761:web:bb21db2ec770e06af4fee8", 
     measurementId: "G-8ZRJM1XBBZ" 
 };
+
+// Accedemos a la instancia global que crea el script CDN
+const firebase = window.firebase;
 
 if (!firebase.apps.length) { 
     firebase.initializeApp(firebaseConfig); 
