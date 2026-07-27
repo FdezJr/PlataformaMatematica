@@ -5,7 +5,8 @@
 
 import { state } from '../core/state.js';
 import { showScreen } from '../ui/ui.js';
-import { generateRandomNumbers, showToast, shuffleArray } from '../utils/helpers.js';
+// Añadimos ?v=2 para romper la caché del navegador
+import { generateRandomNumbers, showToast, shuffleArray } from '../utils/helpers.js?v=2';
 import { renderFinalResults } from '../auth/resultados.js';
 
 // Timer para la Prueba de Memoria 1
